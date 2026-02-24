@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUser, findUser, findUserByUsername, getAllUsers } from '@/lib/storage'
+import { findOrCreateProfile, createPost } from '@/lib/tapestry'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +41,20 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+    }
+
+    // Create Tapestry social profile
+    try {
+      await findOrCreateProfile(address, username.toLowerCase())
+    } catch (tapestryError) {
+      console.error('Tapestry profile creation error (non-blocking):', tapestryError)
+    }
+
+    // Auto-create "Joined RISEN" post
+    try {
+      await createPost(username.toLowerCase(), 'Just joined RISEN! Ready to make an impact on Solana. 🌱', { type: 'joined' })
+    } catch (postError) {
+      console.error('Auto-post creation error (non-blocking):', postError)
     }
 
     return NextResponse.json({
