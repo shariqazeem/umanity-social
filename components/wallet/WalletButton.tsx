@@ -12,11 +12,11 @@ export function WalletButton() {
 
   if (!mounted) {
     return (
-      <button className="bg-black hover:bg-gray-800 rounded-xl h-12 px-6 text-white font-medium">
-        Select Wallet
+      <button className="bg-[#111] hover:bg-black rounded-full h-10 px-5 text-white text-[13px] font-medium transition-all hover:shadow-lg hover:shadow-black/10">
+        Connect
       </button>
     )
   }
 
-  return <WalletMultiButton className="!bg-black hover:!bg-gray-800 !rounded-xl !h-12" />
+  return <WalletMultiButton className="!bg-[#111] hover:!bg-black !rounded-full !h-10 !px-5 !text-[13px] !font-medium !transition-all hover:!shadow-lg hover:!shadow-black/10" />
 }

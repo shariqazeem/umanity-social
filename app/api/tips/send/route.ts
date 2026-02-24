@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createTip, updateSenderStats, updateRecipientStats } from '@/lib/storage'
+import { createTip, updateSenderStats, updateRecipientStats, findUser } from '@/lib/storage'
 import { calculateRewardPoints } from '@/lib/constants'
+import { createPost } from '@/lib/tapestry'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,20 @@ export async function POST(request: NextRequest) {
 
     // Update recipient stats
     await updateRecipientStats(recipient, solAmount)
+
+    // Auto-create social post via Tapestry (non-blocking)
+    try {
+      const user = await findUser(sender)
+      if (user) {
+        await createPost(user.username, `Sent ${solAmount} SOL to @${recipientUsername || 'a friend'} on RISEN! ⚡`, {
+          type: 'tip',
+          amount: String(solAmount),
+          recipient: recipientUsername || recipient,
+        })
+      }
+    } catch (e) {
+      console.error('Social post creation failed (non-blocking):', e)
+    }
 
     return NextResponse.json({
       success: true,

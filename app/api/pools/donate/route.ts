@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPoolDonation, updatePoolStats, updateUserDonation, getAllPoolDonations } from '@/lib/storage'
+import { createPoolDonation, updatePoolStats, updateUserDonation, getAllPoolDonations, findUser } from '@/lib/storage'
 import { calculateRewardPoints } from '@/lib/constants'
+import { createPost } from '@/lib/tapestry'
+import { recordImpactNFT } from '@/lib/nft'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +38,27 @@ export async function POST(request: NextRequest) {
 
     // Update donor stats and reward points
     await updateUserDonation(donor, solAmount, rewardPoints)
+
+    // Auto-create social post via Tapestry (non-blocking)
+    try {
+      const user = await findUser(donor)
+      if (user) {
+        await createPost(user.username, `Donated ${solAmount} SOL to ${poolName || 'a cause'} on RISEN! 🌍`, {
+          type: 'donation',
+          amount: String(solAmount),
+          cause: poolName || pool,
+        })
+      }
+    } catch (e) {
+      console.error('Social post creation failed (non-blocking):', e)
+    }
+
+    // Mint Impact NFT (non-blocking)
+    try {
+      await recordImpactNFT(donor, poolName || pool, solAmount, donation?.id, signature)
+    } catch (e) {
+      console.error('NFT mint failed (non-blocking):', e)
+    }
 
     return NextResponse.json({
       success: true,

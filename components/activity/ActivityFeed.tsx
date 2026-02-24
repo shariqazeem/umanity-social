@@ -9,7 +9,6 @@ interface Activity {
   username?: string
   amount: number
   poolName?: string
-  recipient?: string
   recipientUsername?: string
   message?: string
   timestamp: string
@@ -22,7 +21,6 @@ export function ActivityFeed() {
 
   useEffect(() => {
     fetchActivities()
-    // Refresh every 30 seconds
     const interval = setInterval(fetchActivities, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -31,9 +29,7 @@ export function ActivityFeed() {
     try {
       const response = await fetch('/api/activity')
       const data = await response.json()
-      if (data.success) {
-        setActivities(data.activities)
-      }
+      if (data.success) setActivities(data.activities)
     } catch (error) {
       console.error('Failed to fetch activities:', error)
     } finally {
@@ -41,137 +37,58 @@ export function ActivityFeed() {
     }
   }
 
-  const getActivityIcon = (type: string) => {
-    if (type === 'donation') return '💝'
-    if (type === 'pool_donation') return '🌍'
-    if (type === 'tip') return '⚡'
-    return '🎁'
-  }
-
-  const getActivityText = (activity: Activity) => {
-    const username = activity.username || 'Anonymous'
-
-    if (activity.type === 'donation') {
-      return (
-        <>
-          <span className="font-bold">{username}</span> donated{' '}
-          <span className="font-bold text-green-600">{activity.amount.toFixed(3)} SOL</span>{' '}
-          via One-Tap
-        </>
-      )
-    }
-
-    if (activity.type === 'pool_donation') {
-      return (
-        <>
-          <span className="font-bold">{username}</span> donated{' '}
-          <span className="font-bold text-green-600">{activity.amount.toFixed(3)} SOL</span>{' '}
-          to <span className="font-bold">{activity.poolName}</span>
-        </>
-      )
-    }
-
-    if (activity.type === 'tip') {
-      return (
-        <>
-          <span className="font-bold">{username}</span> tipped{' '}
-          <span className="font-bold text-purple-600">{activity.amount.toFixed(3)} SOL</span>{' '}
-          to <span className="font-bold">@{activity.recipientUsername}</span>
-        </>
-      )
-    }
-  }
-
-  const getTimeAgo = (timestamp: string) => {
-    const now = new Date()
-    const then = new Date(timestamp)
-    const diffMs = now.getTime() - then.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return `${diffHours}h ago`
-
-    const diffDays = Math.floor(diffHours / 24)
-    return `${diffDays}d ago`
-  }
-
-  if (loading) {
-    return (
-      <div className="glass-card rounded-3xl p-8">
-        <div className="text-center py-8">
-          <div className="animate-spin h-8 w-8 border-4 border-black border-t-transparent rounded-full mx-auto mb-3"></div>
-          <p className="text-gray-600">Loading activity...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (activities.length === 0) {
-    return (
-      <div className="glass-card rounded-3xl p-8">
-        <h3 className="text-2xl font-bold mb-6">📊 Recent Activity</h3>
-        <div className="text-center py-12 text-gray-500">
-          <div className="text-5xl mb-3">🎯</div>
-          <p className="font-bold mb-2">No activity yet</p>
-          <p className="text-sm">Be the first to donate or tip!</p>
-        </div>
-      </div>
-    )
+  const timeAgo = (ts: string) => {
+    const diff = Date.now() - new Date(ts).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'now'
+    if (mins < 60) return `${mins}m`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h`
+    return `${Math.floor(hrs / 24)}d`
   }
 
   return (
-    <div className="glass-card rounded-3xl p-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-2xl font-bold">📊 Recent Activity</h3>
-          <p className="text-sm text-gray-600">Live updates from the community</p>
+    <div className="card p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-bold">Activity</h3>
+        <div className="flex items-center gap-2 text-[11px] text-gray-400">
+          <div className="pulse-dot" />
+          Live
         </div>
-        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
       </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex items-start space-x-3 p-4 bg-black/5 hover:bg-black/10 rounded-xl transition-all"
-          >
-            <div className="text-2xl">{getActivityIcon(activity.type)}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-800">
-                {getActivityText(activity)}
-              </p>
-              {activity.message && (
-                <p className="text-xs text-gray-600 mt-1 italic">
-                  &ldquo;{activity.message}&rdquo;
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => <div key={i} className="skeleton h-10" />)}
+        </div>
+      ) : activities.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-10">No activity yet</p>
+      ) : (
+        <div className="space-y-0.5 max-h-[400px] overflow-y-auto">
+          {activities.map((a) => (
+            <div key={a.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                a.type === 'tip' ? 'bg-purple-50 text-purple-500' :
+                a.type === 'pool_donation' ? 'bg-blue-50 text-blue-500' :
+                'bg-emerald-50 text-emerald-500'
+              }`}>
+                {a.type === 'tip' ? '⚡' : a.type === 'pool_donation' ? '🌍' : '♡'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-700">
+                  <span className="font-medium">{a.username || 'Anon'}</span>
+                  {a.type === 'tip' ? ` tipped @${a.recipientUsername}` :
+                   a.type === 'pool_donation' ? ` donated to ${a.poolName}` :
+                   ' donated'}
                 </p>
-              )}
-              <div className="flex items-center space-x-3 mt-2">
-                <span className="text-xs text-gray-500">{getTimeAgo(activity.timestamp)}</span>
-                <a
-                  href={`https://solscan.io/tx/${activity.signature}?cluster=devnet`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  View TX →
-                </a>
+                {a.message && <p className="text-[11px] text-gray-400 truncate">{a.message}</p>}
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-xs font-semibold counter">{a.amount.toFixed(3)}</p>
+                <p className="text-[10px] text-gray-400">{timeAgo(a.timestamp)}</p>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {activities.length > 0 && (
-        <div className="mt-6 text-center">
-          <button
-            onClick={fetchActivities}
-            className="text-sm text-gray-600 hover:text-black transition-colors"
-          >
-            🔄 Refresh
-          </button>
+          ))}
         </div>
       )}
     </div>
