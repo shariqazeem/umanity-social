@@ -23,7 +23,12 @@ export function FeedPostCard({ post, currentUsername }: FeedPostCardProps) {
   const [comments, setComments] = useState<{ username: string; text: string }[]>([])
   const [loadingLike, setLoadingLike] = useState(false)
 
-  const username = (post.data.username as string) || (post.data.profileId as string) || 'unknown'
+  const username = (post.data.username as string)
+    || (post.data.profileId as string)
+    || ((post.data.authorProfile as any)?.username)
+    || ((post.data.profile as any)?.username)
+    || ((post.data.content as any)?.profileId)
+    || 'unknown'
   const properties = (post.data.properties as Record<string, string>) || {}
   const rawContent = typeof post.data.content === 'string'
     ? post.data.content
@@ -31,7 +36,9 @@ export function FeedPostCard({ post, currentUsername }: FeedPostCardProps) {
       ? properties.content
       : typeof post.data.text === 'string'
         ? post.data.text
-        : ''
+        : typeof (post.data.content as any)?.content === 'string'
+          ? (post.data.content as any).content
+          : ''
   const content = rawContent || ''
   const commentCount = (post.data.commentCount as number) || (post.data.comments as number) || 0
   const createdAt = post.timestamp || (post.data.createdAt as string) || (post.data.created_at as string)
@@ -180,6 +187,20 @@ export function FeedPostCard({ post, currentUsername }: FeedPostCardProps) {
           <span>💬</span>
           <span>{comments.length || commentCount}</span>
         </button>
+
+        <a
+          href={`https://x.com/intent/tweet?text=${encodeURIComponent(
+            isDonation
+              ? `Just donated ${(post.data.amount as number)?.toFixed(3) || ''} SOL to ${(post.data.pool_name as string) || 'a cause'} on @umanity_xyz! On-chain, transparent, community-governed.\n\nhttps://umanity.xyz`
+              : `${(content || '').slice(0, 180)}\n\nvia @umanity_xyz\nhttps://umanity.xyz`
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors ml-auto"
+        >
+          <span>&#119831;</span>
+          <span>Share</span>
+        </a>
       </div>
 
       {showComments && (

@@ -61,7 +61,8 @@ export function SmartFeed() {
     }
 
     try {
-      const res = await fetch(`/api/feed/smart?username=${currentUsername}`)
+      const addressParam = publicKey ? `&address=${publicKey.toBase58()}` : ''
+      const res = await fetch(`/api/feed/smart?username=${currentUsername}${addressParam}`)
       const data = await res.json()
       if (data.feed) {
         setFeed(data.feed)
@@ -71,11 +72,30 @@ export function SmartFeed() {
     } finally {
       setLoading(false)
     }
-  }, [currentUsername])
+  }, [currentUsername, publicKey])
 
   useEffect(() => {
     fetchFeed()
   }, [fetchFeed])
+
+  // Optimistically add a new post to the top of the feed
+  const handlePostCreated = useCallback((content: string) => {
+    if (!currentUsername) return
+    const optimisticPost: FeedItem = {
+      type: 'post',
+      id: `optimistic_${Date.now()}`,
+      data: {
+        username: currentUsername,
+        profileId: currentUsername,
+        content,
+        properties: { type: 'manual' },
+        likeCount: 0,
+        commentCount: 0,
+      },
+      timestamp: new Date().toISOString(),
+    }
+    setFeed(prev => [optimisticPost, ...prev])
+  }, [currentUsername])
 
   const renderFeedItem = (item: FeedItem) => {
     switch (item.type) {
@@ -114,11 +134,12 @@ export function SmartFeed() {
       <div className="mb-6 pt-2">
         <h2 className="text-3xl font-bold tracking-tight mb-1">Feed</h2>
         <p className="text-gray-400 text-sm">Your network&apos;s impact, live.</p>
+        <span className="text-[10px] text-gray-300">Powered by Tapestry Protocol</span>
       </div>
 
       {currentUsername && (
         <div className="mb-4">
-          <FeedComposer username={currentUsername} onPostCreated={fetchFeed} />
+          <FeedComposer username={currentUsername} onPostCreated={handlePostCreated} />
         </div>
       )}
 
@@ -140,10 +161,38 @@ export function SmartFeed() {
             {[1, 2, 3].map((i) => <div key={i} className="skeleton h-36" />)}
           </div>
         ) : feed.length === 0 ? (
-          <div className="card p-16 text-center">
-            <p className="text-2xl mb-3">🌱</p>
-            <p className="text-gray-400 text-sm font-medium">Your feed is empty</p>
-            <p className="text-gray-300 text-xs mt-1">Follow impact makers in the Explore tab to fill your feed.</p>
+          <div className="space-y-0">
+            <div className="card p-5 mb-1 border-l-4 border-l-emerald-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-2">Example</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">S</div>
+                <span className="text-sm font-medium">@satoshi</span>
+                <span className="text-xs text-gray-300">2h ago</span>
+              </div>
+              <p className="text-sm text-gray-600">Donated 0.5 SOL to Gaza Medical Relief on Umanity! Every bit helps. {'\u{1F49A}'}</p>
+            </div>
+            <div className="card p-5 mb-1 border-l-4 border-l-blue-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 mb-2">Example</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700">V</div>
+                <span className="text-sm font-medium">@vitalik</span>
+                <span className="text-xs text-gray-300">5h ago</span>
+              </div>
+              <p className="text-sm text-gray-600">Just reached Sprout tier on Umanity! Building impact on-chain. {'\u{1F331}'}</p>
+            </div>
+            <div className="card p-5 mb-1 border-l-4 border-l-purple-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-purple-600 mb-2">Example</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-700">A</div>
+                <span className="text-sm font-medium">@anatoly</span>
+                <span className="text-xs text-gray-300">1d ago</span>
+              </div>
+              <p className="text-sm text-gray-600">5 donations and counting! The Solana community is incredible. {'\u26A1}'}</p>
+            </div>
+            <div className="card p-8 text-center mt-3">
+              <p className="text-gray-400 text-sm font-medium">Follow impact makers to fill your feed</p>
+              <p className="text-gray-300 text-xs mt-1">Head to the Explore tab to discover people and causes.</p>
+            </div>
           </div>
         ) : (
           <div className="animate-stagger">

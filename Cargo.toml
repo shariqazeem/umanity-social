@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "programs/umanity-donations",
-    "programs/umanity-tips"
+    "programs/risen-donations",
+    "programs/risen-tips"
 ]
 resolver = "2"
 

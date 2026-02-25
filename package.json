@@ -1,5 +1,5 @@
 {
-  "name": "risen",
+  "name": "umanity",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,17 +13,21 @@
     "test:programs": "anchor test"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.30.1",
+    "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/react": "^3.0.99",
+    "@coral-xyz/anchor": "^0.31.1",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
     "@solana/wallet-adapter-wallets": "^0.19.32",
     "@solana/web3.js": "^1.95.8",
     "@supabase/supabase-js": "^2.76.1",
+    "ai": "^6.0.97",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "socialfi": "^0.1.14"
+    "socialfi": "^0.1.14",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

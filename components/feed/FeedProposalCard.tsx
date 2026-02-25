@@ -12,6 +12,9 @@ interface FeedProposalCardProps {
     total_votes: number
     created_at: string
     closes_at: string
+    proposal_type?: string
+    campaign_id?: string
+    milestone_index?: number
     results?: { option: string; index: number; voteCount: number; totalWeight: number; percentage: number }[]
     totalVoters?: number
     totalWeight?: number
@@ -23,10 +26,15 @@ interface FeedProposalCardProps {
 export function FeedProposalCard({ proposal, voterAddress, onVoted }: FeedProposalCardProps) {
   const [voting, setVoting] = useState(false)
   const [voted, setVoted] = useState(false)
+  const [executing, setExecuting] = useState(false)
+  const [executeResult, setExecuteResult] = useState<{ approved: boolean; message: string } | null>(null)
   const [error, setError] = useState('')
 
   const isExpired = new Date(proposal.closes_at) < new Date()
   const isActive = proposal.status === 'active' && !isExpired
+  const isExecuted = proposal.status === 'executed'
+  const canExecute = isExpired && proposal.status === 'active'
+  const isFundRelease = proposal.proposal_type === 'fund_release'
 
   const timeLeft = () => {
     const diff = new Date(proposal.closes_at).getTime() - Date.now()
@@ -65,6 +73,30 @@ export function FeedProposalCard({ proposal, voterAddress, onVoted }: FeedPropos
     }
   }
 
+  const handleExecute = async () => {
+    if (executing) return
+    setExecuting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/governance/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposalId: proposal.id }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setExecuteResult({ approved: data.approved, message: data.message })
+        onVoted()
+      }
+    } catch {
+      setError('Failed to execute')
+    } finally {
+      setExecuting(false)
+    }
+  }
+
   const results = proposal.results && proposal.results.length > 0
     ? proposal.results
     : (proposal.options || []).map((opt, i) => ({
@@ -76,13 +108,22 @@ export function FeedProposalCard({ proposal, voterAddress, onVoted }: FeedPropos
       }))
 
   return (
-    <div className="card p-5 mb-3 border-l-4 border-l-amber-400">
+    <div className={`card p-5 mb-3 border-l-4 ${isFundRelease ? 'border-l-emerald-400' : 'border-l-amber-400'}`}>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-          Governance
+        <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+          isFundRelease
+            ? 'text-emerald-600 bg-emerald-50'
+            : 'text-amber-600 bg-amber-50'
+        }`}>
+          {isFundRelease ? 'Fund Release Vote' : 'Governance'}
         </span>
-        <span className={`text-[10px] font-medium ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
-          {isActive ? timeLeft() : 'Ended'}
+        <span className={`text-[10px] font-medium ${
+          isActive ? 'text-emerald-600'
+          : canExecute ? 'text-amber-600'
+          : isExecuted ? 'text-blue-600'
+          : 'text-gray-400'
+        }`}>
+          {isActive ? timeLeft() : canExecute ? 'Ready to execute' : isExecuted ? 'Executed' : 'Ended'}
         </span>
       </div>
 
@@ -112,6 +153,30 @@ export function FeedProposalCard({ proposal, voterAddress, onVoted }: FeedPropos
           </button>
         ))}
       </div>
+
+      {/* Execute button */}
+      {canExecute && !executeResult && (
+        <button
+          onClick={handleExecute}
+          disabled={executing}
+          className={`w-full py-2.5 rounded-xl text-xs font-medium mb-3 transition-all ${
+            isFundRelease
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-[#111] text-white hover:bg-gray-800'
+          }`}
+        >
+          {executing ? 'Executing...' : 'Execute & Finalize'}
+        </button>
+      )}
+
+      {/* Execute result */}
+      {executeResult && (
+        <div className={`rounded-xl p-3 mb-3 ${executeResult.approved ? 'bg-emerald-50' : 'bg-red-50'}`}>
+          <p className={`text-xs font-medium ${executeResult.approved ? 'text-emerald-700' : 'text-red-700'}`}>
+            {executeResult.message}
+          </p>
+        </div>
+      )}
 
       {error && <p className="text-red-500 text-[11px] mb-2">{error}</p>}
 

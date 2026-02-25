@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     try {
       const user = await findUser(donor)
       if (user) {
-        await createPost(user.username, `Donated ${solAmount} SOL via One-Tap on RISEN! Every bit helps. 💚`, {
+        await createPost(user.username, `Donated ${solAmount} SOL via One-Tap on Umanity! Every bit helps. 💚`, {
           type: 'donation',
           amount: String(solAmount),
           cause: 'One-Tap Donation',

@@ -1,9 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { GradientAvatar } from '@/components/shared/GradientAvatar'
 import { ImpactScore } from './ImpactScore'
+import { DonationStreak } from './DonationStreak'
+import { SocialGraph } from './SocialGraph'
+import { getTierConfig } from '@/lib/nft'
+
+function getUserTierLabel(totalDonated: number): string {
+  if (totalDonated >= 1.0) return 'Diamond'
+  if (totalDonated >= 0.5) return 'Gold'
+  if (totalDonated >= 0.1) return 'Silver'
+  return 'Bronze'
+}
 
 interface UserProfile {
   address: string
@@ -20,9 +30,10 @@ interface UserProfile {
 interface NFT {
   id: string
   tier: string
-  donationType: string
+  cause_name: string
   amount: number
-  createdAt: string
+  owner_address: string
+  created_at: string
 }
 
 export function ProfilePage() {
@@ -35,6 +46,7 @@ export function ProfilePage() {
   const [editingBio, setEditingBio] = useState(false)
   const [newBio, setNewBio] = useState('')
   const [savingBio, setSavingBio] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   useEffect(() => {
     if (publicKey) fetchProfile()
@@ -125,10 +137,6 @@ export function ProfilePage() {
     )
   }
 
-  const TIER_EMOJI: Record<string, string> = {
-    bronze: '🥉', silver: '🥈', gold: '🥇', diamond: '💎'
-  }
-
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6 pt-2">
@@ -176,7 +184,7 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mt-6 pt-4 border-t border-black/[0.03]">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-black/[0.03]">
           <div className="text-center">
             <div className="text-lg font-bold counter">{followerCount}</div>
             <div className="text-[10px] text-gray-400">Followers</div>
@@ -196,8 +204,36 @@ export function ProfilePage() {
         </div>
       </div>
 
+      {/* Share Impact Button */}
+      <button
+        onClick={() => setShowShareModal(true)}
+        className="btn-primary w-full py-3 rounded-2xl text-sm font-medium mb-4 flex items-center justify-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+        </svg>
+        Share Impact
+      </button>
+
+      {/* Share Impact Modal */}
+      {showShareModal && (
+        <ShareImpactModal
+          username={profile.username}
+          totalDonated={profile.totalDonated}
+          donationCount={profile.donationCount}
+          rewardPoints={profile.rewardPoints}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+
       {/* Impact Score */}
       <ImpactScore address={profile.address} username={profile.username} />
+
+      {/* Donation Streak */}
+      <DonationStreak address={profile.address} />
+
+      {/* Social Graph */}
+      <SocialGraph username={profile.username} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 mb-4">
@@ -222,13 +258,20 @@ export function ProfilePage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-stagger">
-            {nfts.map((nft) => (
-              <div key={nft.id} className="card-interactive p-4 text-center">
-                <span className="text-3xl">{TIER_EMOJI[nft.tier] || '🏅'}</span>
-                <p className="text-xs font-semibold mt-2 capitalize">{nft.tier}</p>
-                <p className="text-[10px] text-gray-400">{nft.amount} SOL · {nft.donationType}</p>
-              </div>
-            ))}
+            {nfts.map((nft) => {
+              const tier = getTierConfig(nft.tier)
+              return (
+                <div key={nft.id} className={`card-interactive p-4 text-center border-2 ${tier.borderColor} ${tier.bgColor}`}>
+                  <span className="text-3xl">{tier.emoji}</span>
+                  <p className={`text-xs font-semibold mt-2 ${tier.color}`}>{tier.label}</p>
+                  <p className="text-[11px] font-medium text-gray-700 mt-1 line-clamp-1">{nft.cause_name}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{nft.amount} SOL</p>
+                  <p className="text-[9px] text-gray-300 mt-1">
+                    {nft.created_at ? new Date(nft.created_at).toLocaleDateString() : ''}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
@@ -236,6 +279,102 @@ export function ProfilePage() {
       {/* Member Since */}
       <div className="text-center text-xs text-gray-300 py-4">
         Member since {new Date(profile.created_at).toLocaleDateString()}
+      </div>
+    </div>
+  )
+}
+
+/* ===== Share Impact Modal ===== */
+
+interface ShareImpactModalProps {
+  username: string
+  totalDonated: number
+  donationCount: number
+  rewardPoints: number
+  onClose: () => void
+}
+
+function ShareImpactModal({ username, totalDonated, donationCount, rewardPoints, onClose }: ShareImpactModalProps) {
+  const tier = getUserTierLabel(totalDonated)
+
+  const cardUrl = useMemo(() => {
+    const params = new URLSearchParams({
+      username,
+      totalDonated: totalDonated.toFixed(2),
+      donationCount: donationCount.toString(),
+      tier,
+      rewardPoints: rewardPoints.toString(),
+    })
+    return `/api/impact-card?${params.toString()}`
+  }, [username, totalDonated, donationCount, tier, rewardPoints])
+
+  const handleDownload = () => {
+    const link = document.createElement('a')
+    link.href = cardUrl
+    link.download = `umanity-impact-${username}.svg`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleShareOnX = () => {
+    const text = encodeURIComponent(
+      `My impact on @umanity_xyz:\n${totalDonated.toFixed(2)} SOL donated across ${donationCount} donations.\nTier: ${tier}\n\nOn-chain giving, transparent governance, real impact.\nhttps://umanity.xyz`
+    )
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer')
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-fade-up">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+        >
+          <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h3 className="text-lg font-bold mb-1">Share Your Impact</h3>
+        <p className="text-xs text-gray-400 mb-5">Show the world what you&apos;ve done on Umanity.</p>
+
+        {/* Card Preview */}
+        <div className="rounded-2xl overflow-hidden border border-black/[0.06] mb-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cardUrl}
+            alt={`Impact card for @${username}`}
+            className="w-full h-auto"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleDownload}
+            className="btn-secondary flex-1 py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Download
+          </button>
+          <button
+            onClick={handleShareOnX}
+            className="btn-primary flex-[2] py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            Share on X
+          </button>
+        </div>
       </div>
     </div>
   )

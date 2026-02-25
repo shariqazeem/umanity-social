@@ -18,6 +18,8 @@ export function SearchBar({ currentUsername }: SearchBarProps) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [followedSet, setFollowedSet] = useState<Set<string>>(new Set())
+  const [followingInProgress, setFollowingInProgress] = useState<Set<string>>(new Set())
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -25,6 +27,7 @@ export function SearchBar({ currentUsername }: SearchBarProps) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (query.length < 2) {
       setResults([])
+      setShowResults(false)
       return
     }
     setLoading(true)
@@ -53,15 +56,25 @@ export function SearchBar({ currentUsername }: SearchBarProps) {
   }, [])
 
   const handleFollow = async (username: string) => {
-    if (!currentUsername) return
+    if (!currentUsername || followingInProgress.has(username) || followedSet.has(username)) return
+    setFollowingInProgress(prev => new Set(prev).add(username))
     try {
-      await fetch('/api/social/follow', {
+      const res = await fetch('/api/social/follow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ follower: currentUsername, followee: username }),
       })
+      if (res.ok) {
+        setFollowedSet(prev => new Set(prev).add(username))
+      }
     } catch {
       // fail silently
+    } finally {
+      setFollowingInProgress(prev => {
+        const next = new Set(prev)
+        next.delete(username)
+        return next
+      })
     }
   }
 
@@ -77,17 +90,20 @@ export function SearchBar({ currentUsername }: SearchBarProps) {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setShowResults(true)}
           placeholder="Search users..."
-          className="input !pl-11"
+          className="input !pl-11 !pr-10"
         />
         {loading && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+          <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
         )}
       </div>
 
       {showResults && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/[0.05] z-50 max-h-80 overflow-y-auto">
-          {results.map((user) => (
-            <div key={user.username} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+          {results.map((user, idx) => (
+            <div key={`${user.username}_${idx}`} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
               <GradientAvatar username={user.username} size="lg" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">@{user.username}</p>
@@ -96,9 +112,16 @@ export function SearchBar({ currentUsername }: SearchBarProps) {
               {currentUsername && currentUsername !== user.username && (
                 <button
                   onClick={() => handleFollow(user.username)}
-                  className="btn-primary px-3 py-1.5 text-[11px]"
+                  disabled={followedSet.has(user.username) || followingInProgress.has(user.username)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
+                    followedSet.has(user.username)
+                      ? 'bg-gray-100 text-gray-400'
+                      : followingInProgress.has(user.username)
+                        ? 'bg-gray-100 text-gray-400'
+                        : 'btn-primary'
+                  }`}
                 >
-                  Follow
+                  {followedSet.has(user.username) ? 'Following' : followingInProgress.has(user.username) ? '...' : 'Follow'}
                 </button>
               )}
             </div>

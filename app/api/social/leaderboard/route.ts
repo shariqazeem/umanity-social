@@ -3,7 +3,7 @@ import { getTapestryLeaderboard } from '@/lib/tapestry'
 
 export async function GET(request: NextRequest) {
   try {
-    const namespace = request.nextUrl.searchParams.get('namespace') || 'risen'
+    const namespace = request.nextUrl.searchParams.get('namespace') || 'umanity'
     const data = await getTapestryLeaderboard(namespace)
     return NextResponse.json(data)
   } catch (error) {

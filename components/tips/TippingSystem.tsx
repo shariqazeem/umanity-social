@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { PublicKey, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { BN } from '@coral-xyz/anchor'
+import { getTipsProgram, findUserProfilePDA } from '@/lib/anchor'
 
 interface User {
   address: string
@@ -15,7 +17,8 @@ interface User {
 }
 
 export function TippingSystem() {
-  const { publicKey, sendTransaction } = useWallet()
+  const wallet = useWallet()
+  const { publicKey } = wallet
   const { connection } = useConnection()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
@@ -25,6 +28,7 @@ export function TippingSystem() {
   const [loading, setLoading] = useState(false)
   const [txSignature, setTxSignature] = useState('')
   const [error, setError] = useState('')
+  const [optimisticSuccess, setOptimisticSuccess] = useState(false)
 
   useEffect(() => {
     if (publicKey) {
@@ -56,34 +60,72 @@ export function TippingSystem() {
   }
 
   const sendTip = async () => {
-    if (!publicKey || !selectedUser || !tipAmount) return
+    if (!publicKey || !selectedUser || !tipAmount || !wallet.wallet) return
     const solAmount = parseFloat(tipAmount)
     if (solAmount < 0.001) { setError('Minimum 0.001 SOL'); return }
 
     setLoading(true)
     setTxSignature('')
     setError('')
+    setOptimisticSuccess(false)
 
     try {
       const recipientPubkey = new PublicKey(selectedUser.address)
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: recipientPubkey,
-          lamports: solAmount * LAMPORTS_PER_SOL,
+      const anchorWallet = wallet as any
+      const program = getTipsProgram(connection, anchorWallet)
+
+      // Derive UserProfile PDAs
+      const [senderProfilePDA] = findUserProfilePDA(publicKey)
+      const [recipientProfilePDA] = findUserProfilePDA(recipientPubkey)
+
+      // Ensure sender's on-chain UserProfile exists (lazy creation)
+      const senderAccount = await connection.getAccountInfo(senderProfilePDA)
+      if (!senderAccount) {
+        try {
+          await (program.methods as any)
+            .registerUser(currentUser?.username || '', currentUser?.displayName || '')
+            .accounts({
+              userProfile: senderProfilePDA,
+              owner: publicKey,
+              systemProgram: '11111111111111111111111111111111',
+            })
+            .rpc()
+        } catch (regErr: any) {
+          // If account already exists on-chain, ignore
+          if (!regErr.message?.includes('already in use')) {
+            throw new Error('Failed to create on-chain profile. Please try again.')
+          }
+        }
+      }
+
+      // Check recipient has on-chain profile (required for tips)
+      const recipientAccount = await connection.getAccountInfo(recipientProfilePDA)
+      if (!recipientAccount) {
+        throw new Error(`@${selectedUser.username} doesn't have an on-chain profile yet. They need to send a tip first to create one.`)
+      }
+
+      // Create tip record keypair
+      const tipRecord = Keypair.generate()
+      const lamports = Math.floor(solAmount * LAMPORTS_PER_SOL)
+
+      // Call Anchor send_tip instruction
+      const signature = await (program.methods as any)
+        .sendTip(new BN(lamports), message || '')
+        .accounts({
+          senderProfile: senderProfilePDA,
+          recipientProfile: recipientProfilePDA,
+          tipRecord: tipRecord.publicKey,
+          sender: publicKey,
+          recipient: recipientPubkey,
+          systemProgram: '11111111111111111111111111111111',
         })
-      )
+        .signers([tipRecord])
+        .rpc()
 
-      const signature = await sendTransaction(transaction, connection)
       setTxSignature(signature)
+      setOptimisticSuccess(true)
 
-      const latestBlockhash = await connection.getLatestBlockhash()
-      await connection.confirmTransaction({
-        signature,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      }, 'confirmed')
-
+      // Sync to backend
       try {
         await fetch('/api/tips/send', {
           method: 'POST',
@@ -107,6 +149,7 @@ export function TippingSystem() {
         setMessage('')
         setTxSignature('')
         setError('')
+        setOptimisticSuccess(false)
         fetchUsers()
         checkRegistration()
       }, 3000)
@@ -114,6 +157,7 @@ export function TippingSystem() {
       console.error('Tip error:', error)
       setError(error.message || 'Tip failed')
       setTxSignature('')
+      setOptimisticSuccess(false)
     } finally {
       setLoading(false)
     }
@@ -160,7 +204,7 @@ export function TippingSystem() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-xl font-bold tracking-tight">Community</h3>
-          <p className="text-sm text-gray-400 mt-0.5">Tip members directly</p>
+          <p className="text-sm text-gray-400 mt-0.5">Tip members directly (on-chain)</p>
         </div>
         <span className="pill bg-gray-100 text-gray-500">{otherUsers.length} members</span>
       </div>
@@ -209,22 +253,24 @@ export function TippingSystem() {
                   <p className="text-[11px] text-gray-400">{selectedUser.displayName}</p>
                 </div>
               </div>
-              <button onClick={() => { setSelectedUser(null); setTxSignature('') }} className="btn-ghost w-8 h-8 flex items-center justify-center text-lg">&times;</button>
+              <button onClick={() => { setSelectedUser(null); setTxSignature(''); setOptimisticSuccess(false) }} className="btn-ghost w-8 h-8 flex items-center justify-center text-lg">&times;</button>
             </div>
 
-            {txSignature && (
+            {(txSignature || optimisticSuccess) && (
               <div className="bg-emerald-50 rounded-2xl p-4 mb-5 flex items-center gap-3">
                 <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium text-emerald-700">Tip sent</p>
-                  <a href={`https://solscan.io/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 underline">View on Solscan</a>
+                  <p className="text-sm font-medium text-emerald-700">Tip sent!</p>
+                  {txSignature && (
+                    <a href={`https://solscan.io/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 underline">View on Solscan</a>
+                  )}
                 </div>
               </div>
             )}
 
-            {error && !txSignature && (
+            {error && !txSignature && !optimisticSuccess && (
               <p className="text-red-500 text-xs mb-4">{error}</p>
             )}
 

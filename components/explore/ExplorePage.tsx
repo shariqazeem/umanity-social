@@ -33,6 +33,7 @@ export function ExplorePage() {
       <div className="mb-6 pt-2">
         <h2 className="text-3xl font-bold tracking-tight mb-1">Explore</h2>
         <p className="text-gray-400 text-sm">Discover impact makers, causes, and stories.</p>
+        <span className="text-[10px] text-gray-300 mt-1 inline-block">Powered by Tapestry Protocol</span>
       </div>
 
       <SearchBar currentUsername={currentUsername} />

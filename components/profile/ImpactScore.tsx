@@ -62,7 +62,7 @@ export function ImpactScore({ address, username }: ImpactScoreProps) {
     { label: 'Donations', value: score.donations, max: 300 },
     { label: 'Consistency', value: score.consistency, max: 100 },
     { label: 'Governance', value: score.governance, max: 150 },
-    { label: 'Social', value: score.social, max: 200 },
+    { label: 'Social (Tapestry followers × 2)', value: score.social, max: 200 },
     { label: 'Tipping', value: score.tipping, max: 100 },
     { label: 'Referrals', value: score.referrals, max: 100 },
     { label: 'Loyalty', value: score.loyalty, max: 50 },

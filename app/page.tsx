@@ -11,12 +11,16 @@ import { ActivityFeed } from '@/components/activity/ActivityFeed'
 import { SmartFeed } from '@/components/feed/SmartFeed'
 import { ExplorePage } from '@/components/explore/ExplorePage'
 import { ProfilePage } from '@/components/profile/ProfilePage'
+import { GovernancePanel } from '@/components/governance/GovernancePanel'
 import { GradientAvatar } from '@/components/shared/GradientAvatar'
+import { NotificationBell } from '@/components/shared/NotificationBell'
+import { UmanityAgent } from '@/components/ai/UmanityAgent'
 
 const TABS = [
   { id: 'feed' as const, label: 'Feed', icon: '◎' },
   { id: 'explore' as const, label: 'Explore', icon: '◈' },
   { id: 'donate' as const, label: 'Donate', icon: '♡' },
+  { id: 'govern' as const, label: 'Govern', icon: '⬡' },
   { id: 'profile' as const, label: 'Profile', icon: '◆' },
 ] as const
 
@@ -26,8 +30,10 @@ export default function Home() {
   const { publicKey } = useWallet()
   const [activeTab, setActiveTab] = useState<TabId>('feed')
   const [isRegistered, setIsRegistered] = useState(false)
+  const [registeredUsername, setRegisteredUsername] = useState('')
   const [checking, setChecking] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [referrer, setReferrer] = useState('')
 
   const checkRegistration = useCallback(async () => {
     if (!publicKey) return
@@ -36,6 +42,9 @@ export default function Home() {
       const res = await fetch(`/api/register/check?address=${publicKey.toBase58()}`)
       const data = await res.json()
       setIsRegistered(data.registered)
+      if (data.registered && data.user?.username) {
+        setRegisteredUsername(data.user.username)
+      }
       if (!data.registered) {
         setShowOnboarding(true)
       }
@@ -47,10 +56,17 @@ export default function Home() {
   }, [publicKey])
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref')
+    if (ref) setReferrer(ref)
+  }, [])
+
+  useEffect(() => {
     if (publicKey) {
       checkRegistration()
     } else {
       setIsRegistered(false)
+      setRegisteredUsername('')
       setShowOnboarding(false)
       setChecking(false)
     }
@@ -67,7 +83,7 @@ export default function Home() {
       <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center animate-fade-up">
           <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-sm font-black">R</span>
+            <span className="text-white text-sm font-black">U</span>
           </div>
           <div className="w-6 h-6 border-2 border-gray-200 border-t-[#111] rounded-full animate-spin mx-auto" />
         </div>
@@ -79,6 +95,7 @@ export default function Home() {
   if (showOnboarding && !isRegistered) {
     return <OnboardingScreen
       onComplete={() => { setIsRegistered(true); setShowOnboarding(false) }}
+      referrer={referrer}
     />
   }
 
@@ -90,9 +107,9 @@ export default function Home() {
           <div className="flex items-center gap-10">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-[#111] flex items-center justify-center">
-                <span className="text-white text-xs font-black">R</span>
+                <span className="text-white text-xs font-black">U</span>
               </div>
-              <span className="text-[15px] font-semibold tracking-tight">RISEN</span>
+              <span className="text-[15px] font-semibold tracking-tight">Umanity</span>
             </div>
             <nav className="hidden md:flex items-center">
               {TABS.map((tab) => (
@@ -116,6 +133,12 @@ export default function Home() {
               <div className="pulse-dot" />
               Devnet
             </div>
+            {publicKey && isRegistered && registeredUsername && (
+              <NotificationBell
+                address={publicKey.toBase58()}
+                username={registeredUsername}
+              />
+            )}
             <WalletButton />
           </div>
         </div>
@@ -145,9 +168,12 @@ export default function Home() {
           {activeTab === 'feed' && <SmartFeed />}
           {activeTab === 'explore' && <ExplorePage />}
           {activeTab === 'donate' && <DonateView />}
+          {activeTab === 'govern' && <GovernancePanel />}
           {activeTab === 'profile' && <ProfilePage />}
         </div>
       </main>
+
+      <UmanityAgent />
     </div>
   )
 }
@@ -160,9 +186,9 @@ function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-[#111] flex items-center justify-center">
-              <span className="text-white text-xs font-black">R</span>
+              <span className="text-white text-xs font-black">U</span>
             </div>
-            <span className="text-[15px] font-semibold tracking-tight">RISEN</span>
+            <span className="text-[15px] font-semibold tracking-tight">Umanity</span>
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-1.5 text-[11px] text-gray-400">
@@ -179,7 +205,7 @@ function LandingPage() {
           <div className="max-w-4xl animate-fade-up">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-black/[0.04] text-[11px] font-medium text-gray-400 mb-10">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Solana Graveyard Hackathon 2025
+              Solana Graveyard Hackathon · Resurrecting Purpose
             </div>
 
             <h1 className="text-[clamp(3rem,8vw,6.5rem)] font-bold tracking-[-0.04em] leading-[0.9] mb-8 text-gray-900">
@@ -228,19 +254,19 @@ function LandingPage() {
                 num: '01',
                 title: 'Social-First Feed',
                 desc: 'Your feed shows what your network is doing. Donations, votes, and stories from people you follow. Social proof drives impact.',
-                tag: 'Tapestry Protocol',
+                tag: '\u2726 Tapestry Protocol',
               },
               {
                 num: '02',
                 title: 'DAO Governance',
-                desc: 'Your donations earn reward points. Points become voting power. Propose and vote on where community funds go.',
-                tag: 'Realms',
+                desc: 'Your donations earn reward points. Points become voting power. Community votes control when escrowed funds are released on-chain.',
+                tag: 'Anchor Escrow',
               },
               {
                 num: '03',
                 title: 'Impact NFTs',
                 desc: 'Soulbound, non-transferable proof you made a difference. Tiered certificates from Bronze to Diamond.',
-                tag: 'Bubblegum V2',
+                tag: 'Impact Proof',
               },
             ].map((f) => (
               <div key={f.num} className="card p-8 hover:shadow-lg transition-all duration-300">
@@ -262,8 +288,7 @@ function LandingPage() {
               <div className="flex items-center gap-6 mt-2 text-[13px] text-gray-300">
                 <span>Solana</span>
                 <span>Tapestry</span>
-                <span>Realms</span>
-                <span>Metaplex</span>
+                <span>Anchor</span>
                 <span>Supabase</span>
               </div>
             </div>
@@ -276,7 +301,7 @@ function LandingPage() {
 }
 
 /* ===== 4-STEP ONBOARDING ===== */
-function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
+function OnboardingScreen({ onComplete, referrer }: { onComplete: () => void; referrer?: string }) {
   const { publicKey, disconnect } = useWallet()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
@@ -365,6 +390,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           username: username.toLowerCase(),
           displayName,
           bio,
+          referredBy: referrer,
         }),
       })
       const data = await response.json()
@@ -383,21 +409,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           }
         }
 
-        // Auto-create "Joined RISEN" post
-        try {
-          await fetch('/api/social/post', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              username: username.toLowerCase(),
-              content: `Just joined RISEN! Ready to make an impact on Solana. 🌱`,
-              properties: { type: 'joined' },
-            }),
-          })
-        } catch {
-          // Non-blocking post error
-        }
-
+        // Note: "Joined Umanity" post is created by /api/register route — no duplicate here
         setShowSuccess(true)
         setTimeout(() => onComplete(), 2000)
       }
@@ -417,7 +429,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
             </svg>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">You&apos;re in</h2>
-          <p className="text-gray-400 text-sm mb-3">Welcome to RISEN, @{username}</p>
+          <p className="text-gray-400 text-sm mb-3">Welcome to Umanity, @{username}</p>
           <div className="flex items-center justify-center gap-3 text-[11px] text-gray-300">
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -448,9 +460,9 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
       <header className="px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-[#111] flex items-center justify-center">
-            <span className="text-white text-xs font-black">R</span>
+            <span className="text-white text-xs font-black">U</span>
           </div>
-          <span className="text-[15px] font-semibold tracking-tight text-gray-900">RISEN</span>
+          <span className="text-[15px] font-semibold tracking-tight text-gray-900">Umanity</span>
         </div>
         <button
           onClick={() => disconnect()}
@@ -486,11 +498,11 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
             <div className="text-center">
               <div className="w-20 h-20 rounded-3xl bg-gray-50 border border-black/[0.04] flex items-center justify-center mx-auto mb-8 onboarding-float">
                 <div className="w-10 h-10 rounded-xl bg-[#111] flex items-center justify-center">
-                  <span className="text-white text-lg font-black">R</span>
+                  <span className="text-white text-lg font-black">U</span>
                 </div>
               </div>
 
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-3">Welcome to RISEN</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-3">Welcome to Umanity</h2>
               <p className="text-gray-400 leading-relaxed mb-2 max-w-sm mx-auto">
                 The social impact network on Solana.
                 Your donations become stories. Your network drives giving.
@@ -500,12 +512,18 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 Connected: {walletPreview}
               </div>
+              {referrer && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-[11px] text-emerald-600 mt-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  Referred by @{referrer}
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3 mb-10 animate-stagger">
                 {[
                   { icon: '◎', label: 'Social Feed', sub: 'Tapestry Protocol' },
-                  { icon: '⬡', label: 'DAO Voting', sub: 'Realms Governance' },
-                  { icon: '◆', label: 'Impact NFTs', sub: 'Bubblegum V2' },
+                  { icon: '⬡', label: 'DAO Voting', sub: 'Anchor Escrow' },
+                  { icon: '◆', label: 'Impact NFTs', sub: 'Impact Proof' },
                 ].map((f) => (
                   <div key={f.label} className="card p-4 text-center">
                     <div className="text-xl mb-2">{f.icon}</div>
@@ -531,7 +549,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
             <div>
               <p className="text-[11px] text-gray-300 uppercase tracking-widest mb-3 font-medium">Step 1 of 3</p>
               <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">Choose your identity</h2>
-              <p className="text-gray-400 text-sm mb-8">This is how others will find and recognize you on RISEN.</p>
+              <p className="text-gray-400 text-sm mb-8">This is how others will find and recognize you on Umanity.</p>
 
               <div className="space-y-5">
                 <div>

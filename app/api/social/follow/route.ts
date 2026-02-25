@@ -3,10 +3,13 @@ import { createFollow, removeFollow, checkFollow, getFollowers, getFollowing } f
 
 export async function POST(request: NextRequest) {
   try {
-    const { followerId, followeeId } = await request.json()
+    const body = await request.json()
+    // Accept both naming conventions
+    const followerId = body.followerId || body.follower
+    const followeeId = body.followeeId || body.followee
 
     if (!followerId || !followeeId) {
-      return NextResponse.json({ error: 'followerId and followeeId required' }, { status: 400 })
+      return NextResponse.json({ error: 'followerId/follower and followeeId/followee required' }, { status: 400 })
     }
 
     await createFollow(followerId, followeeId)
@@ -19,10 +22,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { followerId, followeeId } = await request.json()
+    const body = await request.json()
+    const followerId = body.followerId || body.follower
+    const followeeId = body.followeeId || body.followee
 
     if (!followerId || !followeeId) {
-      return NextResponse.json({ error: 'followerId and followeeId required' }, { status: 400 })
+      return NextResponse.json({ error: 'followerId/follower and followeeId/followee required' }, { status: 400 })
     }
 
     await removeFollow(followerId, followeeId)

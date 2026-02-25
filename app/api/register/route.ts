@@ -5,7 +5,7 @@ import { findOrCreateProfile, createPost } from '@/lib/tapestry'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { address, username, displayName, bio } = body
+    const { address, username, displayName, bio, referredBy } = body
 
     if (!address || !username || !displayName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
 
     // Create Tapestry social profile
     try {
-      await findOrCreateProfile(address, username.toLowerCase())
+      await findOrCreateProfile(address, username.toLowerCase(), bio, referredBy)
     } catch (tapestryError) {
       console.error('Tapestry profile creation error (non-blocking):', tapestryError)
     }
 
-    // Auto-create "Joined RISEN" post
+    // Auto-create "Joined Umanity" post
     try {
-      await createPost(username.toLowerCase(), 'Just joined RISEN! Ready to make an impact on Solana. 🌱', { type: 'joined' })
+      await createPost(username.toLowerCase(), 'Just joined Umanity! Ready to make an impact on Solana. 🌱', { type: 'joined' })
     } catch (postError) {
       console.error('Auto-post creation error (non-blocking):', postError)
     }

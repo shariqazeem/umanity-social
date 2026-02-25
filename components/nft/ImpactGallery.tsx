@@ -122,7 +122,7 @@ export function ImpactGallery() {
         </div>
         <div>
           <p className="text-sm font-medium">Soulbound Certificates</p>
-          <p className="text-xs text-gray-400">Non-transferable tokens you earn through real donations. Built with Metaplex Bubblegum V2.</p>
+          <p className="text-xs text-gray-400">Non-transferable impact certificates you earn through real donations.</p>
         </div>
       </div>
     </div>

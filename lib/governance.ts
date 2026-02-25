@@ -27,7 +27,10 @@ export async function createProposal(
   title: string,
   description: string,
   options: string[],
-  durationHours: number = 72
+  durationHours: number = 72,
+  proposalType?: string,
+  campaignId?: string,
+  milestoneIndex?: number
 ) {
   // Check user has min 100 reward points
   const { data: user } = await supabase
@@ -42,17 +45,23 @@ export async function createProposal(
 
   const closesAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString()
 
+  const insert: Record<string, unknown> = {
+    creator_address: creatorAddress,
+    title,
+    description,
+    options,
+    status: 'active',
+    total_votes: 0,
+    closes_at: closesAt,
+    proposal_type: proposalType || 'general',
+  }
+
+  if (campaignId) insert.campaign_id = campaignId
+  if (milestoneIndex !== undefined) insert.milestone_index = milestoneIndex
+
   const { data, error } = await supabase
     .from('governance_proposals')
-    .insert({
-      creator_address: creatorAddress,
-      title,
-      description,
-      options,
-      status: 'active',
-      total_votes: 0,
-      closes_at: closesAt,
-    })
+    .insert(insert)
     .select()
     .single()
 
@@ -153,6 +162,49 @@ export async function getProposalVotes(proposalId: string) {
 
   if (error) throw error
   return data || []
+}
+
+export async function createMilestoneProposal(
+  campaignId: string,
+  milestoneIndex: number,
+  poolName: string,
+  milestoneDescription: string,
+  authority: string
+) {
+  const title = `Release funds: ${poolName} - Milestone ${milestoneIndex + 1}`
+  const description = `This proposal votes on releasing escrowed funds for: "${milestoneDescription}". Approved funds will be released to Umanity Org wallet for verified delivery to ${poolName}. Proof of delivery posted on @umanity_xyz X page.`
+  const options = ['Yes, release funds', 'No, hold funds']
+  const closesAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+
+  const { data, error } = await supabase
+    .from('governance_proposals')
+    .insert({
+      creator_address: authority,
+      title,
+      description,
+      options,
+      status: 'active',
+      total_votes: 0,
+      closes_at: closesAt,
+      campaign_id: campaignId,
+      milestone_index: milestoneIndex,
+      proposal_type: 'fund_release',
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  // Link proposal to milestone
+  if (data) {
+    await supabase
+      .from('campaign_milestones')
+      .update({ governance_proposal_id: data.id })
+      .eq('campaign_id', campaignId)
+      .eq('index', milestoneIndex)
+  }
+
+  return data
 }
 
 export async function getProposalResults(proposalId: string) {

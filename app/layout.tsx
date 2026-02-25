@@ -3,7 +3,7 @@ import './globals.css'
 import { WalletProvider } from '@/components/wallet/WalletProvider'
 
 export const metadata: Metadata = {
-  title: 'RISEN - Resurrecting Purpose on Solana',
+  title: 'Umanity — The Social Impact Network on Solana',
   description: 'Community-driven philanthropy where your social graph is your impact network, your votes decide where funds go, and your NFTs prove you made a difference.',
 }
 

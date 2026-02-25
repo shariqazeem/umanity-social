@@ -4,7 +4,7 @@ import { getUserImpactNFTs, getAllImpactNFTs } from '@/lib/nft'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const walletAddress = searchParams.get('walletAddress')
+    const walletAddress = searchParams.get('walletAddress') || searchParams.get('address')
 
     let nfts
     if (walletAddress) {

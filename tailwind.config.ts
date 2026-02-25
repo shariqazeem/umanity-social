@@ -19,7 +19,7 @@ const config: Config = {
         'gray-700': '#404040',
         'gray-800': '#262626',
         'gray-900': '#171717',
-        'risen': {
+        'umanity': {
           50: '#ecfdf5',
           100: '#d1fae5',
           200: '#a7f3d0',

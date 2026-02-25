@@ -5,7 +5,7 @@ import { GradientAvatar } from '@/components/shared/GradientAvatar'
 
 interface FeedComposerProps {
   username: string
-  onPostCreated: () => void
+  onPostCreated: (content: string) => void
 }
 
 export function FeedComposer({ username, onPostCreated }: FeedComposerProps) {
@@ -25,8 +25,9 @@ export function FeedComposer({ username, onPostCreated }: FeedComposerProps) {
           properties: { type: 'manual' },
         }),
       })
+      const postedContent = content.trim()
       setContent('')
-      onPostCreated()
+      onPostCreated(postedContent)
     } catch {
       // Silently fail
     } finally {

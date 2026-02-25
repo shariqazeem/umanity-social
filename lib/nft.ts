@@ -31,16 +31,16 @@ export function getTierConfig(tier: string) {
 
 export function buildNFTMetadata(cause: string, amount: number, tier: string, donor: string) {
   return {
-    name: `RISEN Impact: ${cause}`,
-    symbol: 'RISEN',
-    description: `Proof of impact. ${amount} SOL donated to ${cause} via RISEN - Resurrecting Purpose on Solana.`,
+    name: `Umanity Impact: ${cause}`,
+    symbol: 'UMANITY',
+    description: `Proof of impact. ${amount} SOL donated to ${cause} via Umanity — The Social Impact Network on Solana.`,
     image: '', // Would be generated/hosted image
     attributes: [
       { trait_type: 'Cause', value: cause },
       { trait_type: 'Amount', value: `${amount} SOL` },
       { trait_type: 'Tier', value: tier.charAt(0).toUpperCase() + tier.slice(1) },
       { trait_type: 'Donor', value: donor },
-      { trait_type: 'Platform', value: 'RISEN' },
+      { trait_type: 'Platform', value: 'Umanity' },
       { trait_type: 'Soulbound', value: 'true' },
     ],
     properties: {

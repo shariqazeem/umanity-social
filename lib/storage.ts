@@ -434,21 +434,30 @@ export async function getPoolById(poolId: string): Promise<Pool | null> {
   }
 }
 
-// Update pool stats after donation
-// Note: donor_count is now calculated dynamically from pool_donations
-// but we keep this function to update total_donated
-export async function updatePoolStats(poolId: string, amount: number) {
+// Update pool stats after donation (upserts pool row if it doesn't exist)
+export async function updatePoolStats(poolId: string, amount: number, poolName?: string) {
   const pool = await getPoolById(poolId)
-  if (!pool) return
 
-  // Update total donated amount
-  // Donor count is calculated dynamically in getAllPools() and getPoolById()
-  await supabase
-    .from('pools')
-    .update({
-      total_donated: pool.totalDonated + amount
-    })
-    .eq('id', poolId)
+  if (pool) {
+    // Pool exists — update total
+    await supabase
+      .from('pools')
+      .update({ total_donated: pool.totalDonated + amount })
+      .eq('id', poolId)
+  } else {
+    // Pool row doesn't exist in Supabase yet — create it
+    const { VERIFIED_CHARITIES, POOL_META } = await import('@/lib/constants')
+    const charity = VERIFIED_CHARITIES.find(c => c.id === poolId)
+    const meta = POOL_META[poolId]
+    await supabase
+      .from('pools')
+      .insert({
+        id: poolId,
+        name: poolName || charity?.name || poolId,
+        description: charity?.description || meta?.description || '',
+        total_donated: amount,
+      })
+  }
 }
 
 // Create pool donation

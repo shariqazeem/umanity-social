@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { BN } from '@coral-xyz/anchor'
+import { getDonationsProgram, findPoolPDA, findVaultPDA } from '@/lib/anchor'
+import { POOL_META, POOL_SEEDS, POOL_RECIPIENTS, UMANITY_ORG_WALLET } from '@/lib/constants'
 import { SocialProofBadge } from '@/components/shared/SocialProofBadge'
+import { MilestoneProgress } from '@/components/campaign/MilestoneProgress'
 
 interface Pool {
   id: string
@@ -13,29 +17,53 @@ interface Pool {
   donorCount: number
 }
 
-const POOL_META: Record<string, { emoji: string; wallet: string; category: string; color: string }> = {
-  medical: { emoji: '🏥', wallet: 'BAScBKuDXCqdHxcoqdaDrUyJtFVtjBM5wS8tLd6tsgpy', category: 'Healthcare', color: 'bg-red-50 text-red-600' },
-  education: { emoji: '📚', wallet: 'BAScBKuDXCqdHxcoqdaDrUyJtFVtjBM5wS8tLd6tsgpy', category: 'Education', color: 'bg-blue-50 text-blue-600' },
-  disaster: { emoji: '🆘', wallet: 'BAScBKuDXCqdHxcoqdaDrUyJtFVtjBM5wS8tLd6tsgpy', category: 'Emergency', color: 'bg-orange-50 text-orange-600' },
-  water: { emoji: '💧', wallet: 'BAScBKuDXCqdHxcoqdaDrUyJtFVtjBM5wS8tLd6tsgpy', category: 'Infrastructure', color: 'bg-cyan-50 text-cyan-600' },
-}
+// Fallback pool data matching on-chain pools (seed data for empty state)
+const FALLBACK_POOLS: Pool[] = [
+  { id: 'palestine-red-crescent', name: 'Palestine Red Crescent Society', description: 'Medical aid & emergency relief for civilians in Palestine via PRCS', totalDonated: 0, donorCount: 0 },
+  { id: 'turkish-red-crescent', name: 'Turkish Red Crescent (Kizilay)', description: 'Earthquake recovery & disaster relief via Turkish Red Crescent', totalDonated: 0, donorCount: 0 },
+  { id: 'mercy-corps', name: 'Mercy Corps', description: 'Clean water, food security & crisis response worldwide', totalDonated: 0, donorCount: 0 },
+  { id: 'edhi-foundation', name: 'Edhi Foundation', description: 'Healthcare, orphan care & emergency services via Edhi Foundation Pakistan', totalDonated: 0, donorCount: 0 },
+  { id: 'orphanage-aid', name: 'Local Orphanage Aid', description: 'Supplies, education & care for local orphanages — Umanity delivers personally', totalDonated: 0, donorCount: 0 },
+  { id: 'animal-rescue', name: 'Street Animal Rescue', description: 'Rescue, shelter & medical care for street animals — Umanity delivers personally', totalDonated: 0, donorCount: 0 },
+]
 
 export function DonationPools() {
-  const { publicKey, sendTransaction } = useWallet()
+  const wallet = useWallet()
+  const { publicKey } = wallet
   const { connection } = useConnection()
   const [pools, setPools] = useState<Pool[]>([])
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null)
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [txSignature, setTxSignature] = useState('')
+  const [optimisticSuccess, setOptimisticSuccess] = useState(false)
   const [socialProof, setSocialProof] = useState<Record<string, string[]>>({})
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+  const [campaigns, setCampaigns] = useState<Record<string, { id: string; target_amount: number; total_raised: number }>>({})
+
 
   useEffect(() => {
     fetchPools()
+    fetchCampaigns()
     if (publicKey) fetchCurrentUser()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicKey])
+
+  const fetchCampaigns = async () => {
+    try {
+      const res = await fetch('/api/campaigns')
+      const data = await res.json()
+      if (data.campaigns) {
+        const map: Record<string, { id: string; target_amount: number; total_raised: number }> = {}
+        for (const c of data.campaigns) {
+          map[c.pool_id] = { id: c.id, target_amount: c.target_amount, total_raised: c.total_raised }
+        }
+        setCampaigns(map)
+      }
+    } catch {
+      // No campaigns
+    }
+  }
 
   const fetchCurrentUser = async () => {
     if (!publicKey) return
@@ -44,7 +72,6 @@ export function DonationPools() {
       const data = await res.json()
       if (data.registered && data.user) {
         setCurrentUsername(data.user.username)
-        // Fetch social proof for pools once we have username
         fetchSocialProof(data.user.username)
       }
     } catch {
@@ -53,7 +80,7 @@ export function DonationPools() {
   }
 
   const fetchSocialProof = async (username: string) => {
-    const poolIds = ['medical', 'education', 'disaster', 'water']
+    const poolIds = Object.keys(POOL_SEEDS)
     for (const poolId of poolIds) {
       try {
         const res = await fetch(`/api/social-proof?username=${username}&poolId=${poolId}`)
@@ -71,65 +98,99 @@ export function DonationPools() {
     try {
       const response = await fetch('/api/pools')
       const data = await response.json()
-      setPools(data.pools || [])
+      const fetched = (data.pools || []) as Pool[]
+      // Build a map of fetched pools that match our pool IDs
+      const fetchedMap = new Map<string, Pool>()
+      for (const p of fetched) {
+        if (POOL_META[p.id]) fetchedMap.set(p.id, p)
+      }
+      // Merge: use API data where available, fallback data for the rest
+      const merged = FALLBACK_POOLS.map(fb => fetchedMap.get(fb.id) || fb)
+      setPools(merged)
     } catch (error) {
       console.error('Error fetching pools:', error)
-      setPools([])
+      setPools(FALLBACK_POOLS)
     }
   }
 
   const donate = async () => {
-    if (!publicKey || !selectedPool || !amount) return
+    if (!publicKey || !selectedPool || !amount || !wallet.wallet) return
     const solAmount = parseFloat(amount)
     if (solAmount < 0.001) return
 
     setLoading(true)
     setTxSignature('')
+    setOptimisticSuccess(false)
 
     try {
-      const lamports = solAmount * LAMPORTS_PER_SOL
-      const meta = POOL_META[selectedPool.id]
-      const poolWallet = new PublicKey(meta?.wallet || 'BAScBKuDXCqdHxcoqdaDrUyJtFVtjBM5wS8tLd6tsgpy')
+      const poolSeed = POOL_SEEDS[selectedPool.id]
+      if (!poolSeed) throw new Error('Unknown pool')
 
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: poolWallet, lamports })
-      )
+      const anchorWallet = wallet as any
+      const program = getDonationsProgram(connection, anchorWallet)
 
-      const signature = await sendTransaction(transaction, connection)
+      // Derive PDAs
+      const [poolPDA] = findPoolPDA(poolSeed)
+      const [vaultPDA] = findVaultPDA(poolPDA)
+
+      // Create donation record keypair
+      const donationRecord = Keypair.generate()
+      const lamports = Math.floor(solAmount * LAMPORTS_PER_SOL)
+
+      // Call Anchor donate_to_pool instruction
+      const signature = await (program.methods as any)
+        .donateToPool(new BN(lamports))
+        .accounts({
+          pool: poolPDA,
+          poolVault: vaultPDA,
+          donationRecord: donationRecord.publicKey,
+          donor: publicKey,
+          systemProgram: '11111111111111111111111111111111',
+        })
+        .signers([donationRecord])
+        .rpc()
+
       setTxSignature(signature)
 
-      const latestBlockhash = await connection.getLatestBlockhash()
-      await connection.confirmTransaction({
-        signature,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      }, 'confirmed')
+      // Optimistic UI: show success immediately
+      setOptimisticSuccess(true)
 
+      // Optimistically update pool stats locally
+      setPools(prev => prev.map(p =>
+        p.id === selectedPool.id
+          ? { ...p, totalDonated: p.totalDonated + solAmount, donorCount: p.donorCount + 1 }
+          : p
+      ))
+
+      // Sync to backend
       try {
-        await fetch('/api/pools/donate', {
+        await fetch('/api/donate/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             donor: publicKey.toBase58(),
-            pool: selectedPool.id,
-            poolName: selectedPool.name,
             amount: solAmount,
             signature,
+            pool: selectedPool.id,
+            poolName: selectedPool.name,
+            type: 'pool',
           }),
         })
       } catch (apiError) {
-        console.error('Failed to record donation:', apiError)
+        console.error('Failed to sync donation:', apiError)
       }
 
       setTimeout(() => {
         setSelectedPool(null)
         setAmount('')
         setTxSignature('')
+        setOptimisticSuccess(false)
         fetchPools()
       }, 3000)
     } catch (error: any) {
       console.error('Donation error:', error)
       setTxSignature('')
+      setOptimisticSuccess(false)
     } finally {
       setLoading(false)
     }
@@ -140,9 +201,26 @@ export function DonationPools() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-xl font-bold tracking-tight">Causes</h3>
-          <p className="text-sm text-gray-400 mt-0.5">Support verified causes</p>
+          <p className="text-sm text-gray-400 mt-0.5">Support verified on-chain causes</p>
         </div>
         <span className="pill bg-gray-100 text-gray-500">{pools.length} active</span>
+      </div>
+
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-4">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-base flex-shrink-0 mt-0.5">
+            {'🤝'}
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-emerald-800 mb-1">How Umanity delivers impact</p>
+            <p className="text-[11px] text-emerald-700 leading-relaxed">
+              All donated funds are held on-chain and released via community governance votes.
+              Umanity Org receives approved funds and physically delivers to verified charities.
+              Every delivery is documented with proof posted on{' '}
+              <a href="https://x.com/umanity_xyz" target="_blank" rel="noopener noreferrer" className="font-semibold underline">@umanity_xyz</a>.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
@@ -158,7 +236,22 @@ export function DonationPools() {
                 <span className={`pill ${meta.color} text-[10px]`}>{meta.category}</span>
               </div>
               <h4 className="font-semibold mb-1">{pool.name}</h4>
-              <p className="text-xs text-gray-400 mb-5 line-clamp-2">{pool.description}</p>
+              <p className="text-xs text-gray-400 mb-2 line-clamp-2">{pool.description}</p>
+              {POOL_RECIPIENTS[pool.id] && (
+                <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                  <span className="text-[10px] text-gray-400">Via Umanity Org </span>
+                  <a
+                    href={`https://solscan.io/account/${POOL_RECIPIENTS[pool.id].address}?cluster=devnet`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-blue-500 hover:underline font-mono"
+                  >
+                    {POOL_RECIPIENTS[pool.id].address.slice(0, 4)}...{POOL_RECIPIENTS[pool.id].address.slice(-4)}
+                  </a>
+                  <span className="text-[10px] text-gray-300">{'·'} Proof on X</span>
+                </div>
+              )}
               {socialProof[pool.id] && socialProof[pool.id].length > 0 && (
                 <div className="mb-4">
                   <SocialProofBadge usernames={socialProof[pool.id]} action="donated" />
@@ -168,7 +261,7 @@ export function DonationPools() {
                 <div>
                   <span className="text-sm font-bold counter">{pool.totalDonated.toFixed(3)}</span>
                   <span className="text-xs text-gray-400 ml-1">SOL</span>
-                  <span className="text-xs text-gray-300 mx-1.5">·</span>
+                  <span className="text-xs text-gray-300 mx-1.5">{'\u00B7'}</span>
                   <span className="text-xs text-gray-400">{pool.donorCount} donors</span>
                 </div>
                 <button
@@ -179,6 +272,13 @@ export function DonationPools() {
                   Donate
                 </button>
               </div>
+              {campaigns[pool.id] && (
+                <MilestoneProgress
+                  campaignId={campaigns[pool.id].id}
+                  totalRaised={campaigns[pool.id].total_raised}
+                  targetAmount={campaigns[pool.id].target_amount}
+                />
+              )}
             </div>
           )
         })}
@@ -202,23 +302,35 @@ export function DonationPools() {
                   </div>
                 </div>
                 <button
-                  onClick={() => { setSelectedPool(null); setTxSignature('') }}
+                  onClick={() => { setSelectedPool(null); setTxSignature(''); setOptimisticSuccess(false) }}
                   className="btn-ghost w-8 h-8 flex items-center justify-center text-lg"
                 >
                   &times;
                 </button>
               </div>
 
-              {txSignature && (
+              {(txSignature || optimisticSuccess) && (
                 <div className="bg-emerald-50 rounded-2xl p-4 mb-5 flex items-center gap-3">
                   <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   <div>
-                    <p className="text-sm font-medium text-emerald-700">Confirmed</p>
-                    <a href={`https://solscan.io/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 underline">
-                      View on Solscan
-                    </a>
+                    <p className="text-sm font-medium text-emerald-700">Donation submitted!</p>
+                    <div className="flex items-center gap-3">
+                      {txSignature && (
+                        <a href={`https://solscan.io/tx/${txSignature}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 underline">
+                          View on Solscan
+                        </a>
+                      )}
+                      <a
+                        href={`https://x.com/intent/tweet?text=${encodeURIComponent(`Just donated ${amount} SOL to ${selectedPool.name} on @umanity_xyz! On-chain, transparent, community-governed.\n\nhttps://umanity.xyz`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-emerald-600 underline font-medium"
+                      >
+                        Share on X
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}

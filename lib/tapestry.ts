@@ -30,15 +30,19 @@ async function tapestryFetch(path: string, options?: RequestInit & { params?: Re
 
 // ---- Profiles ----
 
-export async function findOrCreateProfile(walletAddress: string, username: string, bio?: string) {
+export async function findOrCreateProfile(walletAddress: string, username: string, bio?: string, referredBy?: string) {
+  const body: Record<string, string> = {
+    walletAddress,
+    username,
+    bio: bio || '',
+    blockchain: 'SOLANA',
+  }
+  if (referredBy) {
+    body.referredById = referredBy
+  }
   return tapestryFetch('/profiles/findOrCreate', {
     method: 'POST',
-    body: JSON.stringify({
-      walletAddress,
-      username,
-      bio: bio || '',
-      blockchain: 'SOLANA',
-    }),
+    body: JSON.stringify(body),
   })
 }
 
@@ -160,9 +164,15 @@ export async function removeLike(profileId: string, contentId: string) {
   })
 }
 
-export async function checkLike(_profileId: string, _contentId: string) {
-  // No direct check endpoint in Tapestry API
-  return false
+export async function checkLike(profileId: string, contentId: string) {
+  try {
+    const data = await tapestryFetch(`/contents/${contentId}`, {
+      params: { requestingId: profileId },
+    })
+    return data?.isLiked ?? false
+  } catch {
+    return false
+  }
 }
 
 // ---- Search ----

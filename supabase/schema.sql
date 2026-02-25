@@ -1,4 +1,4 @@
--- RISEN Database Schema
+-- Umanity Database Schema
 -- Run this in your Supabase SQL Editor (https://supabase.com/dashboard > SQL Editor)
 
 -- Users table

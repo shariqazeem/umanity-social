@@ -7,7 +7,16 @@ export async function GET(request: NextRequest) {
     if (!username) {
       return NextResponse.json({ profiles: [] })
     }
-    const profiles = await getSuggestedProfiles(username)
+    const rawProfiles = await getSuggestedProfiles(username)
+
+    // Normalize Tapestry profile data
+    const profiles = (rawProfiles || [])
+      .map((p: any) => ({
+        username: p.username || p.id || p.profile?.username || '',
+        bio: p.bio || p.profile?.bio || '',
+      }))
+      .filter((p: any) => p.username)
+
     return NextResponse.json({ profiles })
   } catch (error) {
     console.error('Suggested profiles error:', error)

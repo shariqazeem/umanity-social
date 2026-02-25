@@ -1,52 +1,112 @@
-# RISEN - Resurrecting Purpose on Solana
+# Umanity — The Social Impact Network on Solana
 
-**Onchain social died because it was about clout. DAOs died because governance had no stakes. NFTs died because they were speculative JPEGs.**
-
-**RISEN resurrects all three by giving them a reason to exist** - community-driven philanthropy where your social graph is your impact network, your votes decide where funds go, and your NFTs prove you made a difference.
+**Umanity** is a community-driven philanthropy platform on Solana. Your social graph is your impact network, your votes decide where funds go, and your NFTs prove you made a difference.
 
 Built for the [Solana Graveyard Hackathon](https://www.colosseum.org/).
 
+## How It Works
+
+1. **Donate** — SOL goes to on-chain escrow vaults via Anchor programs
+2. **Govern** — Community votes on milestone-based fund releases
+3. **Deliver** — Umanity Org receives approved funds and delivers to verified charities
+4. **Prove** — Every delivery documented with proof on [@umanity_xyz](https://x.com/umanity_xyz)
+5. **Earn** — Impact certificates + reward points for every contribution
+
+All transactions visible on-chain via [Solscan](https://solscan.io/).
+
 ## Resurrected Tracks
 
-### Social (Tapestry) - $5K Bounty Track
+### Social (Tapestry) — $5K Bounty Track
 - Tapestry-powered social profiles and feed
-- Donations auto-post to social feed
+- Donations auto-post to social feed with share-to-X
 - Follow donors, like and comment on impact posts
-- Your social graph = your impact network
+- Social proof badges showing who in your network donated
 
-### DAO Governance (Realms) - $5K Bounty Track
-- Proposal creation and weighted voting
+### Community Escrow Governance
+- Donation-weighted community governance controlling on-chain escrow releases via Anchor program
+- Milestone-based fund release proposals
 - Vote weight = your donation reward points
-- Community decides where funds go
-- Real stakes governance (not empty votes)
+- Tier-gated governance (Bloom+ tier to see proposals)
+- Execute proposals to approve/reject fund releases
+- Real stakes governance — votes control real money
 
-### Impact NFTs (Bubblegum V2) - $2.5K Bounty Track
-- Soulbound impact certificates earned through donations
+### Impact Certificates
+- Impact proof certificates earned through donations
 - Tiered system: Bronze / Silver / Gold / Diamond
+- Cause name, amount, and tier-colored cards
 - Non-transferable proof of purpose
-- Not speculative JPEGs - proof you made a difference
+
+## Active Charity Pools
+
+| Pool | Type | Category |
+|------|------|----------|
+| Palestine Red Crescent Society | Verified charity trust | Healthcare |
+| Turkish Red Crescent (Kizilay) | Verified charity trust | Disaster Relief |
+| Mercy Corps | Verified charity trust | Food & Water |
+| Edhi Foundation | Verified charity trust | Humanitarian |
+| Local Orphanage Aid | Physical — Umanity delivers | Children |
+| Street Animal Rescue | Physical — Umanity delivers | Animal Welfare |
+
+All funds route through Umanity Org wallet for verified delivery. Proof posted on X.
 
 ## Features
 
-- **One-Tap Donations** - $2 instant donations on Solana
-- **Cause Pools** - Donate to Medical, Education, Disaster Relief, Water
-- **Community Tipping** - Send SOL tips to fellow community members
-- **Social Feed** - Tapestry-powered social layer for philanthropy
-- **DAO Voting** - Create and vote on proposals for fund allocation
-- **Impact Gallery** - Soulbound NFT collection proving your impact
-- **Leaderboards** - Real-time rankings by contribution and activity
-- **Reward Points** - 1 SOL = 1,000 points across all activities
+- **One-Tap Donations** — 0.01 SOL instant on-chain donation
+- **6 Charity Pools** — Mix of verified trusts + physical causes
+- **On-Chain Escrow** — Funds held in vault PDAs until community approves release
+- **Milestone System** — 3 milestones per campaign, percentage-based releases
+- **Solana Blinks** — Donate from any X feed or web page via Solana Actions
+- **Community Governance** — Create & vote on fund release proposals
+- **Community Tipping** — Send SOL tips to fellow community members
+- **Social Feed** — Tapestry-powered social layer for philanthropy
+- **Impact Certificates** — Tiered certificates with tier-colored cards
+- **Leaderboards** — Real-time rankings by contribution
+- **Reward Points** — 1 SOL = 1,000 points → voting power
+- **Share to X** — Share donations directly to X from the app
+- **4-Step Onboarding** — Username, follow suggestions, bio, profile preview
 
 ## Tech Stack
 
 - **Blockchain**: Solana (Devnet)
+- **Smart Contracts**: Anchor Framework (Rust) — 2 programs, 9 instructions
 - **Frontend**: Next.js 15, React 19, Tailwind CSS
 - **Social**: Tapestry Protocol API
-- **Governance**: Realms/SPL Governance (Supabase hybrid)
-- **NFTs**: Metaplex Bubblegum V2 (compressed, soulbound)
+- **Governance**: DAO with weighted voting (Supabase + on-chain hybrid)
+- **Impact Certificates**: Donation records with tier system (Supabase)
+- **Blinks**: Solana Actions API v2.1.3
 - **Database**: Supabase (PostgreSQL)
-- **Smart Contracts**: Anchor (Rust)
 - **Deployment**: Vercel
+
+## Deployed Programs (Devnet)
+
+- **Donations**: `9JBsHFy9rQhjcPiKkFzqxpUV9HZyZ1ZmE4AWXc1Kiys1`
+- **Tips**: `DBzVAJHgiyVWZMdj1Q2vHUfL1wW4nVag3AqJ5FKmxtau`
+
+## Architecture
+
+```
+Donation Flow:
+  User donates SOL
+    → Anchor program transfers to on-chain vault PDA
+    → DonationRecord created on-chain
+    → Supabase syncs + checks milestones
+    → Auto-posts to Tapestry social feed
+    → Impact certificate created
+    → Reward points earned → Voting power
+
+Escrow Flow:
+  Pool receives donations → Campaign tracks total_raised
+    → Milestone threshold crossed → Auto-creates governance proposal
+    → Community votes (weighted by donation history)
+    → Proposal executed → Milestone approved/rejected
+    → Approved funds released from vault → Umanity Org wallet
+    → Umanity delivers to charity → Posts proof on X
+
+Blinks Flow:
+  User sees Blink on X/web → GET returns Action metadata
+    → User picks amount → POST builds partially-signed transaction
+    → User signs in wallet → On-chain donation complete
+```
 
 ## Setup
 
@@ -62,67 +122,41 @@ cp .env.example .env.local
 #   TAPESTRY_API_KEY
 #   NEXT_PUBLIC_HELIUS_API_KEY
 
-# Run Supabase migrations (add governance + NFT tables)
-# governance_proposals, governance_votes, impact_nfts
+# Run Supabase migrations
+# See supabase/campaigns.sql for schema
+
+# Initialize on-chain pools
+npx tsx scripts/init-pools.ts
+
+# Seed campaigns with milestones
+node --env-file=.env.local -e "require('child_process').execSync('npx tsx scripts/init-campaigns.ts', {stdio:'inherit', env:process.env})"
+
+# Seed demo donations (real on-chain)
+npx tsx scripts/seed-demo.ts
 
 # Run development server
 npm run dev
 ```
 
-## Supabase Tables (New)
+## Blinks (Solana Actions)
 
-```sql
--- Governance
-CREATE TABLE governance_proposals (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  creator_address TEXT NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  options JSONB NOT NULL,
-  status TEXT DEFAULT 'active',
-  total_votes INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  closes_at TIMESTAMPTZ NOT NULL,
-  realm_proposal_pubkey TEXT
-);
-
-CREATE TABLE governance_votes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  proposal_id UUID REFERENCES governance_proposals(id),
-  voter_address TEXT NOT NULL,
-  vote_option INTEGER NOT NULL,
-  vote_weight INTEGER DEFAULT 1,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(proposal_id, voter_address)
-);
-
--- Impact NFTs
-CREATE TABLE impact_nfts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  owner_address TEXT NOT NULL,
-  donation_id TEXT,
-  cause_name TEXT NOT NULL,
-  amount DECIMAL NOT NULL,
-  tier TEXT NOT NULL,
-  mint_signature TEXT,
-  metadata_uri TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-## Deployed Programs (Devnet)
-
-- **Donations**: `BW8QEjNXreRdzHoQP8C2uRZaZu5pqZD6VK4f6yidpQ1P`
-- **Tips**: `5hkEjoNLyEpgKezYBvU2HF1FgBHfKGqumBaT48moUwqJ`
-
-## Architecture
+Umanity supports Solana Blinks for donating from any X feed or website:
 
 ```
-User donates → On-chain TX → Supabase record
-                           → Tapestry social post (auto)
-                           → Impact NFT minted (auto)
-                           → Reward points earned → Voting power
+GET  /api/actions/donate/{poolId}  → Action metadata (title, amounts, description)
+POST /api/actions/donate/{poolId}  → Partially-signed transaction
 ```
+
+Pool IDs: `palestine-red-crescent`, `turkish-red-crescent`, `mercy-corps`, `edhi-foundation`, `orphanage-aid`, `animal-rescue`
+
+## Tests
+
+```bash
+# Run E2E tests (requires dev server running + devnet)
+node --env-file=.env.local -e "require('child_process').execSync('npx tsx tests/e2e-deep.ts', {stdio:'inherit', env:process.env})"
+```
+
+51 tests covering: IDL validation, on-chain operations, Supabase queries, API endpoints, and Blinks.
 
 ## License
 

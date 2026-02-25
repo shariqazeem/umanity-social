@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { PLATFORM_CONFIG } from '@/lib/constants'
+import { Keypair } from '@solana/web3.js'
+import { getDonationsProgram, findPoolPDA, findVaultPDA } from '@/lib/anchor'
+import { PLATFORM_CONFIG, DEFAULT_ONE_TAP_POOL } from '@/lib/constants'
 
 interface DonationStats {
   totalDonations: number
@@ -13,9 +14,10 @@ interface DonationStats {
 }
 
 export function OneTapDonation() {
-  const { publicKey, sendTransaction } = useWallet()
+  const wallet = useWallet()
+  const { publicKey } = wallet
   const { connection } = useConnection()
-  const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'processing' | 'confirming' | 'success' | 'error'>('idle')
   const [txSignature, setTxSignature] = useState('')
   const [error, setError] = useState('')
   const [rewardPoints, setRewardPoints] = useState(0)
@@ -41,7 +43,7 @@ export function OneTapDonation() {
   }
 
   const donate = async () => {
-    if (!publicKey) {
+    if (!publicKey || !wallet.wallet) {
       setError('Connect your wallet first')
       setStatus('error')
       setTimeout(() => { setStatus('idle'); setError('') }, 3000)
@@ -52,45 +54,54 @@ export function OneTapDonation() {
     setError('')
 
     try {
-      const amount = 0.01 * LAMPORTS_PER_SOL
-      const treasuryPubkey = new PublicKey(PLATFORM_CONFIG.TREASURY_WALLET)
+      const anchorWallet = wallet as any
+      const program = getDonationsProgram(connection, anchorWallet)
 
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: treasuryPubkey,
-          lamports: amount,
+      // Derive PDAs for the default one-tap pool
+      const [poolPDA] = findPoolPDA(DEFAULT_ONE_TAP_POOL)
+      const [vaultPDA] = findVaultPDA(poolPDA)
+
+      // Create a new keypair for the donation record
+      const donationRecord = Keypair.generate()
+
+      // Call the on-chain one_tap_donate instruction
+      const signature = await (program.methods as any)
+        .oneTapDonate()
+        .accounts({
+          pool: poolPDA,
+          poolVault: vaultPDA,
+          donationRecord: donationRecord.publicKey,
+          donor: publicKey,
+          systemProgram: '11111111111111111111111111111111',
         })
-      )
+        .signers([donationRecord])
+        .rpc()
 
-      const signature = await sendTransaction(transaction, connection)
       setTxSignature(signature)
 
-      const latestBlockhash = await connection.getLatestBlockhash()
-      await connection.confirmTransaction({
-        signature,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      }, 'confirmed')
-
+      // Optimistic UI: show points immediately
       const points = Math.floor(0.01 * PLATFORM_CONFIG.POINTS_PER_SOL)
       setRewardPoints(points)
+      setStatus('confirming')
 
+      // Sync to backend (Supabase + milestones)
       try {
-        const response = await fetch('/api/donate', {
+        const response = await fetch('/api/donate/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             donor: publicKey.toBase58(),
             amount: 0.01,
             signature,
+            pool: DEFAULT_ONE_TAP_POOL,
+            poolName: 'Palestine Red Crescent Society',
             type: 'one-tap',
           }),
         })
         const data = await response.json()
-        if (data.success) setRewardPoints(data.rewardPointsEarned)
+        if (data.rewardPoints) setRewardPoints(data.rewardPoints)
       } catch (apiError) {
-        console.error('Failed to record donation:', apiError)
+        console.error('Failed to sync donation:', apiError)
       }
 
       setStatus('success')
@@ -108,23 +119,44 @@ export function OneTapDonation() {
     <section>
       <div className="card relative overflow-hidden">
         {/* Success overlay */}
-        {status === 'success' && (
+        {(status === 'success' || status === 'confirming') && (
           <div className="absolute inset-0 bg-[#111] flex flex-col items-center justify-center z-10 animate-in">
             <div className="w-14 h-14 rounded-full border-2 border-white/20 flex items-center justify-center mb-4">
-              <svg className="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+              {status === 'confirming' ? (
+                <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                <svg className="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </div>
-            <p className="text-white text-lg font-semibold mb-1">Donation confirmed</p>
+            <p className="text-white text-lg font-semibold mb-1">
+              {status === 'confirming' ? 'Confirming...' : 'Donation confirmed'}
+            </p>
             <p className="text-white/50 text-sm mb-4">+{rewardPoints} reward points</p>
-            <a
-              href={`https://solscan.io/tx/${txSignature}?cluster=devnet`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/40 text-xs underline hover:text-white/60 transition-colors"
-            >
-              View on Solscan
-            </a>
+            <div className="flex items-center gap-4">
+              {txSignature && (
+                <a
+                  href={`https://solscan.io/tx/${txSignature}?cluster=devnet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/40 text-xs underline hover:text-white/60 transition-colors"
+                >
+                  View on Solscan
+                </a>
+              )}
+              <a
+                href={`https://x.com/intent/tweet?text=${encodeURIComponent('Just donated 0.01 SOL to Palestine Red Crescent on @umanity_xyz with one tap! On-chain giving made easy.\n\nhttps://umanity.xyz')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/40 text-xs underline hover:text-white/60 transition-colors font-medium"
+              >
+                Share on X
+              </a>
+            </div>
           </div>
         )}
 
@@ -136,7 +168,7 @@ export function OneTapDonation() {
               0.01 SOL
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Instant on-chain donation. Zero platform fees.
+              Instant on-chain donation via Anchor program.
               <br />
               Earn 10 reward points every time.
             </p>
@@ -165,7 +197,7 @@ export function OneTapDonation() {
 
             <button
               onClick={donate}
-              disabled={status === 'processing' || !publicKey}
+              disabled={status === 'processing' || status === 'confirming' || !publicKey}
               className="btn-primary w-48 h-48 !rounded-full text-base flex flex-col items-center justify-center gap-1 hover:!shadow-2xl hover:!shadow-black/20"
             >
               {status === 'processing' ? (
@@ -174,11 +206,11 @@ export function OneTapDonation() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span className="text-sm">Confirming</span>
+                  <span className="text-sm">Signing</span>
                 </span>
               ) : (
                 <>
-                  <span className="text-2xl mb-1">♡</span>
+                  <span className="text-2xl mb-1">{'\u2661'}</span>
                   <span className="font-semibold">Donate</span>
                   <span className="text-xs text-white/50">0.01 SOL</span>
                 </>
@@ -188,7 +220,7 @@ export function OneTapDonation() {
             <div className="flex items-center gap-3 text-[11px] text-gray-400">
               <span>On-chain</span>
               <span className="w-1 h-1 rounded-full bg-gray-300" />
-              <span>Instant</span>
+              <span>Anchor</span>
               <span className="w-1 h-1 rounded-full bg-gray-300" />
               <span>Verified</span>
             </div>

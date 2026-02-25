@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     try {
       const user = await findUser(sender)
       if (user) {
-        await createPost(user.username, `Sent ${solAmount} SOL to @${recipientUsername || 'a friend'} on RISEN! ⚡`, {
+        await createPost(user.username, `Sent ${solAmount} SOL to @${recipientUsername || 'a friend'} on Umanity! ⚡`, {
           type: 'tip',
           amount: String(solAmount),
           recipient: recipientUsername || recipient,

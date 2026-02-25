@@ -47,7 +47,7 @@ export function ProfileCard({ username }: ProfileCardProps) {
           </div>
           <div>
             <p className="font-semibold text-sm">@{username}</p>
-            <p className="text-[11px] text-gray-400">RISEN Member</p>
+            <p className="text-[11px] text-gray-400">Umanity Member</p>
           </div>
         </div>
         <div className="flex items-center gap-5">
