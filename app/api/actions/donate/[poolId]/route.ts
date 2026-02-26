@@ -18,6 +18,7 @@ const CORS_HEADERS = {
   'Access-Control-Expose-Headers': 'X-Action-Version, X-Blockchain-Ids',
   'X-Action-Version': '2.1.3',
   'X-Blockchain-Ids': 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+  'Content-Type': 'application/json',
 }
 
 function findPoolPDA(poolName: string): PublicKey {
@@ -48,21 +49,23 @@ export async function GET(
     return NextResponse.json({ error: 'Pool not found' }, { status: 404, headers: CORS_HEADERS })
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://umanity-solana.vercel.app'
+
   const payload = {
     type: 'action',
     title: `Donate to ${meta.emoji} ${poolId.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')}`,
-    icon: 'https://umanity-solana.vercel.app/icon.png',
+    icon: `${baseUrl}/logo.png`,
     description: meta.description,
     label: 'Donate SOL',
     links: {
       actions: [
-        { label: '0.01 SOL', href: `/api/actions/donate/${poolId}?amount=0.01` },
-        { label: '0.05 SOL', href: `/api/actions/donate/${poolId}?amount=0.05` },
-        { label: '0.1 SOL', href: `/api/actions/donate/${poolId}?amount=0.1` },
-        { label: '0.5 SOL', href: `/api/actions/donate/${poolId}?amount=0.5` },
+        { label: '0.01 SOL', href: `${baseUrl}/api/actions/donate/${poolId}?amount=0.01` },
+        { label: '0.05 SOL', href: `${baseUrl}/api/actions/donate/${poolId}?amount=0.05` },
+        { label: '0.1 SOL', href: `${baseUrl}/api/actions/donate/${poolId}?amount=0.1` },
+        { label: '0.5 SOL', href: `${baseUrl}/api/actions/donate/${poolId}?amount=0.5` },
         {
           label: 'Custom Amount',
-          href: `/api/actions/donate/${poolId}?amount={amount}`,
+          href: `${baseUrl}/api/actions/donate/${poolId}?amount={amount}`,
           parameters: [
             {
               name: 'amount',

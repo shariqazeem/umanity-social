@@ -19,7 +19,7 @@ export default function BlinksPage() {
 
   const copyUrl = (poolId: string) => {
     const actionUrl = `${baseUrl}/api/actions/donate/${poolId}`
-    const url = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`
+    const url = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}&cluster=devnet`
     navigator.clipboard.writeText(url)
     setCopiedId(poolId)
     setTimeout(() => setCopiedId(null), 2000)
@@ -53,7 +53,7 @@ export default function BlinksPage() {
         <div className="space-y-3 animate-stagger">
           {POOLS.map((pool) => {
             const actionUrl = `${baseUrl}/api/actions/donate/${pool.id}`
-            const blinkUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`
+            const blinkUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}&cluster=devnet`
             const isCopied = copiedId === pool.id
 
             return (

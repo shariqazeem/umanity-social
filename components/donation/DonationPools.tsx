@@ -272,7 +272,7 @@ export function DonationPools() {
                   <button
                     onClick={() => {
                       const actionUrl = `${window.location.origin}/api/actions/donate/${pool.id}`
-                      const blinkUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`
+                      const blinkUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}&cluster=devnet`
                       navigator.clipboard.writeText(blinkUrl)
                       const el = document.getElementById(`blink-${pool.id}`)
                       if (el) { el.textContent = 'Copied!'; setTimeout(() => { el.textContent = 'Blink' }, 1500) }
