@@ -23,7 +23,7 @@
     "@solana/web3.js": "^1.95.8",
     "@supabase/supabase-js": "^2.76.1",
     "ai": "^6.0.97",
-    "next": "^15.1.0",
+    "next": "^15.5.12",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "socialfi": "^0.1.14",

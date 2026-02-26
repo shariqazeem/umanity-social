@@ -5,7 +5,7 @@ import { GradientAvatar } from './GradientAvatar'
 
 interface Notification {
   id: string
-  type: 'donation' | 'follow' | 'vote' | 'milestone'
+  type: 'donation' | 'follow' | 'vote' | 'milestone' | 'dare'
   message: string
   from_username?: string
   created_at: string
@@ -37,6 +37,7 @@ function notificationIcon(type: Notification['type']): string {
     case 'follow': return '\u2022' // bullet
     case 'vote': return '\u2B21' // hexagon
     case 'milestone': return '\u2605' // star
+    case 'dare': return '\u26A1' // lightning
     default: return '\u25CF'
   }
 }
@@ -47,6 +48,7 @@ function notificationColor(type: Notification['type']): string {
     case 'follow': return 'text-blue-500'
     case 'vote': return 'text-purple-500'
     case 'milestone': return 'text-amber-500'
+    case 'dare': return 'text-orange-500'
     default: return 'text-gray-400'
   }
 }

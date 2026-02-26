@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { BN } from '@coral-xyz/anchor'
@@ -288,8 +289,8 @@ export function DonationPools() {
       {selectedPool && (() => {
         const meta = POOL_META[selectedPool.id]
         if (!meta) return null
-        return (
-          <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-5">
+        return createPortal(
+          <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-5">
             <div className="bg-white rounded-3xl max-w-md w-full p-7 animate-in">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
@@ -377,7 +378,8 @@ export function DonationPools() {
                 )}
               </button>
             </div>
-          </div>
+          </div>,
+          document.body
         )
       })()}
     </section>

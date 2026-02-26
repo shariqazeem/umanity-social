@@ -92,10 +92,11 @@ export async function GET(request: NextRequest) {
       const activityData = await getNetworkActivityFeed(username, 0, 20)
       const activities = activityData?.activities || activityData?.contents || []
       for (const item of activities) {
+        const normalized = normalizeItem(item)
         feedItems.push({
           type: 'post',
           id: item.id || item.content?.id || `activity_${Date.now()}_${Math.random()}`,
-          data: normalizeItem(item),
+          data: normalized,
           timestamp: item.createdAt || item.created_at || item.content?.created_at,
         })
       }

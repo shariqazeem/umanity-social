@@ -15,6 +15,7 @@ import { GovernancePanel } from '@/components/governance/GovernancePanel'
 import { GradientAvatar } from '@/components/shared/GradientAvatar'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { UmanityAgent } from '@/components/ai/UmanityAgent'
+import { LiveTicker } from '@/components/feed/LiveTicker'
 
 const TABS = [
   { id: 'feed' as const, label: 'Feed', icon: '◎' },
@@ -34,6 +35,7 @@ export default function Home() {
   const [checking, setChecking] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [referrer, setReferrer] = useState('')
+  const [guestMode, setGuestMode] = useState(false)
 
   const checkRegistration = useCallback(async () => {
     if (!publicKey) return
@@ -63,6 +65,7 @@ export default function Home() {
 
   useEffect(() => {
     if (publicKey) {
+      setGuestMode(false)
       checkRegistration()
     } else {
       setIsRegistered(false)
@@ -73,8 +76,8 @@ export default function Home() {
   }, [publicKey, checkRegistration])
 
   /* ======== LANDING PAGE ======== */
-  if (!publicKey) {
-    return <LandingPage />
+  if (!publicKey && !guestMode) {
+    return <LandingPage onGuestMode={() => setGuestMode(true)} />
   }
 
   /* ======== CHECKING STATE ======== */
@@ -92,7 +95,7 @@ export default function Home() {
   }
 
   /* ======== ONBOARDING ======== */
-  if (showOnboarding && !isRegistered) {
+  if (showOnboarding && !isRegistered && !guestMode) {
     return <OnboardingScreen
       onComplete={() => { setIsRegistered(true); setShowOnboarding(false) }}
       referrer={referrer}
@@ -133,6 +136,11 @@ export default function Home() {
               <div className="pulse-dot" />
               Devnet
             </div>
+            {guestMode && (
+              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 text-[11px] text-amber-600 font-medium">
+                Guest Mode
+              </span>
+            )}
             {publicKey && isRegistered && registeredUsername && (
               <NotificationBell
                 address={publicKey.toBase58()}
@@ -143,6 +151,19 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      <LiveTicker />
+
+      {guestMode && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200/40">
+          <div className="max-w-6xl mx-auto px-6 py-2.5 flex items-center justify-between">
+            <p className="text-[12px] text-amber-700">
+              You&apos;re exploring as a guest. Connect a wallet to donate, vote, and post.
+            </p>
+            <WalletButton />
+          </div>
+        </div>
+      )}
 
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-black/[0.04] safe-area-bottom">
         <div className="flex items-center justify-around h-16 px-4">
@@ -164,22 +185,80 @@ export default function Home() {
       </div>
 
       <main className="max-w-6xl mx-auto px-6 py-8 pb-28 md:pb-12">
-        <div className="animate-fade-up">
+        <div className="entrance-reveal">
           {activeTab === 'feed' && <SmartFeed />}
           {activeTab === 'explore' && <ExplorePage />}
-          {activeTab === 'donate' && <DonateView />}
+          {activeTab === 'donate' && <DonateView guestMode={guestMode} />}
           {activeTab === 'govern' && <GovernancePanel />}
-          {activeTab === 'profile' && <ProfilePage />}
+          {activeTab === 'profile' && (guestMode ? <GuestProfileView /> : <ProfilePage />)}
         </div>
       </main>
 
-      <UmanityAgent />
+      {!guestMode && <UmanityAgent />}
+    </div>
+  )
+}
+
+/* ===== PLATFORM STATS BAR ===== */
+function StatsBar() {
+  const [stats, setStats] = useState<{ totalDonations?: number; totalDonors?: number; totalTransactions?: number } | null>(null)
+  const [proposalCount, setProposalCount] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/platform/stats')
+      .then(r => r.json())
+      .then(d => { if (d.stats) setStats(d.stats) })
+      .catch(() => {})
+    fetch('/api/governance/proposals')
+      .then(r => r.json())
+      .then(d => { if (d.proposals) setProposalCount(d.proposals.length) })
+      .catch(() => {})
+  }, [])
+
+  if (!stats) return null
+
+  return (
+    <div className="flex items-center justify-center gap-8 md:gap-14 py-5 px-6 bg-white/60 border-y border-black/[0.04] animate-fade-up">
+      <div className="text-center">
+        <p className="text-xl md:text-2xl font-bold counter tracking-tight">{(stats.totalDonations || 0).toFixed(2)}</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">SOL Donated</p>
+      </div>
+      <div className="w-px h-8 bg-black/[0.06]" />
+      <div className="text-center">
+        <p className="text-xl md:text-2xl font-bold counter tracking-tight">{stats.totalDonors || 0}</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Donors</p>
+      </div>
+      <div className="w-px h-8 bg-black/[0.06]" />
+      <div className="text-center">
+        <p className="text-xl md:text-2xl font-bold counter tracking-tight">{proposalCount}</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Proposals</p>
+      </div>
+    </div>
+  )
+}
+
+/* ===== GUEST PROFILE VIEW ===== */
+function GuestProfileView() {
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-6 pt-2">
+        <h2 className="text-3xl font-bold tracking-tight mb-1">Profile</h2>
+        <p className="text-gray-400 text-sm">Your impact, permanently on-chain.</p>
+      </div>
+      <div className="card p-16 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+          <span className="text-2xl">◆</span>
+        </div>
+        <p className="text-gray-900 font-semibold mb-2">Connect to see your profile</p>
+        <p className="text-gray-400 text-sm mb-6">Your donations, NFTs, social graph, and impact score — all in one place.</p>
+        <WalletButton />
+      </div>
     </div>
   )
 }
 
 /* ===== LANDING PAGE ===== */
-function LandingPage() {
+function LandingPage({ onGuestMode }: { onGuestMode: () => void }) {
   return (
     <div className="min-h-screen page-bg overflow-hidden">
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-black/[0.03]">
@@ -201,7 +280,7 @@ function LandingPage() {
       </header>
 
       <main className="relative">
-        <div className="max-w-6xl mx-auto px-6 pt-40 pb-24">
+        <div className="max-w-6xl mx-auto px-6 pt-40 pb-16">
           <div className="max-w-4xl animate-fade-up">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-black/[0.04] text-[11px] font-medium text-gray-400 mb-10">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -209,19 +288,25 @@ function LandingPage() {
             </div>
 
             <h1 className="text-[clamp(3rem,8vw,6.5rem)] font-bold tracking-[-0.04em] leading-[0.9] mb-8 text-gray-900">
-              The social
+              Crypto charity
               <br />
-              impact network
+              <span className="text-gray-200 line-through decoration-gray-300">is dead.</span>
               <br />
-              <span className="text-gray-200">on Solana.</span>
+              <span className="text-emerald-600">Resurrected.</span>
             </h1>
 
             <p className="text-xl md:text-2xl text-gray-400 max-w-xl leading-relaxed mb-14 font-light">
-              Where philanthropy IS the content. Your feed shows what your network is doing. Social proof drives giving.
+              Where philanthropy IS the content. Social proof replaces trust-me-bro. Community escrow replaces rug pulls.
             </p>
 
             <div className="flex flex-col sm:flex-row items-start gap-4">
               <WalletButton />
+              <button
+                onClick={onGuestMode}
+                className="btn-secondary px-6 py-3 text-[14px] rounded-2xl"
+              >
+                Explore as Guest
+              </button>
               <div className="flex items-center gap-6 text-[12px] text-gray-300 pt-3">
                 <span className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -247,38 +332,86 @@ function LandingPage() {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 pb-32">
+        {/* Live on-chain stats bar */}
+        <StatsBar />
+
+        {/* ===== THE GRAVEYARD: What Died ===== */}
+        <div className="max-w-6xl mx-auto px-6 pt-20 pb-8">
+          <p className="text-[11px] font-semibold text-gray-300 uppercase tracking-[0.2em] mb-8 text-center">What died</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-stagger">
+            {[
+              {
+                dead: 'GoFundMe Clones',
+                why: 'No transparency. Off-chain. No community. You donate and hope for the best.',
+              },
+              {
+                dead: 'Charity Tokens',
+                why: 'Rug pulls everywhere. No accountability. Pure speculation disguised as giving.',
+              },
+              {
+                dead: 'Donation Pages',
+                why: 'Zero follow-up. No social proof. Donate once, forgotten forever.',
+              },
+            ].map((item) => (
+              <div key={item.dead} className="card p-6 border-l-4 border-l-gray-200 opacity-90">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-gray-300 text-lg">&#x1FAA6;</span>
+                  <h3 className="text-base font-semibold text-gray-300 line-through">{item.dead}</h3>
+                </div>
+                <p className="text-sm text-gray-400 leading-relaxed">{item.why}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ===== Arrow transition ===== */}
+        <div className="flex justify-center py-6">
+          <div className="flex flex-col items-center gap-1 text-emerald-500">
+            <svg className="w-6 h-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-600">Resurrected</span>
+          </div>
+        </div>
+
+        {/* ===== THE RESURRECTION: Feature cards ===== */}
+        <div className="max-w-6xl mx-auto px-6 pb-24">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-stagger">
             {[
               {
                 num: '01',
                 title: 'Social-First Feed',
-                desc: 'Your feed shows what your network is doing. Donations, votes, and stories from people you follow. Social proof drives impact.',
+                subtitle: 'Social Proof > Donation Pages',
+                desc: 'Your feed shows what your network is giving. Donations become stories. Follows drive accountability. Built on Tapestry Protocol.',
                 tag: '\u2726 Tapestry Protocol',
               },
               {
                 num: '02',
                 title: 'DAO Governance',
-                desc: 'Your donations earn reward points. Points become voting power. Community votes control when escrowed funds are released on-chain.',
+                subtitle: 'Community Escrow > Trust Me Bro',
+                desc: 'Donations go to on-chain escrow vaults. Community votes control when funds are released. Real stakes, not vibes.',
                 tag: 'Anchor Escrow',
               },
               {
                 num: '03',
                 title: 'Impact NFTs',
-                desc: 'Soulbound, non-transferable proof you made a difference. Tiered certificates from Bronze to Diamond.',
+                subtitle: 'On-Chain Proof > Email Receipts',
+                desc: 'Soulbound, non-transferable proof you made a difference. Tiered certificates from Bronze to Diamond. Permanent on Solana.',
                 tag: 'Impact Proof',
               },
             ].map((f) => (
-              <div key={f.num} className="card p-8 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-center justify-between mb-6">
+              <div key={f.num} className="card p-8 hover:shadow-lg transition-all duration-300 border-l-4 border-l-emerald-400">
+                <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] font-mono text-gray-300">{f.num}</span>
-                  <span className="text-[10px] font-medium text-gray-400 px-2.5 py-1 rounded-full border border-black/[0.05]">{f.tag}</span>
+                  <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full border ${f.num === '01' ? 'text-emerald-600 bg-emerald-50 border-emerald-200/60' : 'text-gray-400 border-black/[0.05]'}`}>{f.tag}</span>
                 </div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">{f.title}</h3>
+                <h3 className="text-lg font-semibold mb-1 text-gray-900">{f.title}</h3>
+                <p className="text-xs font-medium text-emerald-600 mb-3">{f.subtitle}</p>
                 <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
+          <p className="text-center text-[11px] text-gray-300 mt-6">Social layer powered by Tapestry Protocol — 29 API integrations</p>
         </div>
 
         <div className="border-t border-black/[0.04] py-16 px-6">
@@ -292,7 +425,15 @@ function LandingPage() {
                 <span>Supabase</span>
               </div>
             </div>
-            <WalletButton />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onGuestMode}
+                className="btn-secondary px-5 py-2.5 text-[13px] rounded-xl"
+              >
+                Explore as Guest
+              </button>
+              <WalletButton />
+            </div>
           </div>
         </div>
       </main>
@@ -761,7 +902,7 @@ function OnboardingScreen({ onComplete, referrer }: { onComplete: () => void; re
 }
 
 /* ===== DONATE TAB ===== */
-function DonateView() {
+function DonateView({ guestMode }: { guestMode?: boolean }) {
   return (
     <div className="space-y-10">
       <section className="pt-4 pb-2">
@@ -769,9 +910,22 @@ function DonateView() {
           Make an impact.
         </h2>
         <p className="text-gray-400">
-          Every donation earns points, creates social posts, and mints proof-of-impact NFTs.
+          On-chain charity, back from the dead. Every donation earns points, creates social posts, and mints proof-of-impact NFTs.
         </p>
       </section>
+
+      {guestMode && (
+        <div className="card p-5 flex items-center gap-3 border-l-4 border-l-amber-400">
+          <div className="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm">&#x1FAA6;</span>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium">Guest mode — read only</p>
+            <p className="text-xs text-gray-400">Connect a Solana wallet to make donations and earn impact NFTs.</p>
+          </div>
+          <WalletButton />
+        </div>
+      )}
 
       <OneTapDonation />
       <DonationPools />

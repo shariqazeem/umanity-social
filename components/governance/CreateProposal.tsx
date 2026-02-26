@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Campaign {
   id: string
@@ -161,8 +162,8 @@ export function CreateProposal({ creatorAddress, onClose, onCreated }: CreatePro
     }
   }
 
-  return (
-    <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-5">
+  return createPortal(
+    <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-5">
       <div className="bg-white rounded-3xl max-w-md w-full p-7 animate-in max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-bold">
@@ -398,6 +399,7 @@ export function CreateProposal({ creatorAddress, onClose, onCreated }: CreatePro
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

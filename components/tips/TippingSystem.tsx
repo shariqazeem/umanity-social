@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { PublicKey, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { BN } from '@coral-xyz/anchor'
@@ -240,8 +241,8 @@ export function TippingSystem() {
       )}
 
       {/* Tip Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-5">
+      {selectedUser && createPortal(
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-5">
           <div className="bg-white rounded-3xl max-w-md w-full p-7 animate-in">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
@@ -293,7 +294,8 @@ export function TippingSystem() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   )

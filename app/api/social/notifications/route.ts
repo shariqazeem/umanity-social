@@ -48,12 +48,39 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST — Send a Tapestry push notification (existing behavior)
+// POST — Send notification (Tapestry push OR in-app Supabase notification)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { profileId, title, body: notifBody } = body
+    const { profileId, title, body: notifBody, recipientAddress, type, message, fromUsername } = body
 
+    // In-app notification (stored in Supabase)
+    if (recipientAddress && message) {
+      try {
+        await supabase.from('notifications').insert({
+          recipient_address: recipientAddress,
+          type: type || 'donation',
+          message,
+          from_username: fromUsername || null,
+          read: false,
+        })
+      } catch {
+        // Table may not exist — non-blocking
+      }
+
+      // Also try Tapestry push if we have the profile
+      if (fromUsername) {
+        try {
+          await sendNotification(fromUsername, 'Impact Dare', message)
+        } catch {
+          // Push is non-blocking
+        }
+      }
+
+      return NextResponse.json({ success: true })
+    }
+
+    // Tapestry push notification (legacy)
     if (!profileId || !title || !notifBody) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }

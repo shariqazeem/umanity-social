@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { GradientAvatar } from '@/components/shared/GradientAvatar'
+import { ProofOrb } from '@/components/social/ProofOrbs'
 import { ImpactScore } from './ImpactScore'
 import { DonationStreak } from './DonationStreak'
 import { SocialGraph } from './SocialGraph'
@@ -141,13 +143,25 @@ export function ProfilePage() {
     <div className="max-w-2xl mx-auto">
       <div className="mb-6 pt-2">
         <h2 className="text-3xl font-bold tracking-tight mb-1">Profile</h2>
-        <p className="text-gray-400 text-sm">Your impact resume.</p>
+        <p className="text-gray-400 text-sm">Your impact, permanently on-chain.</p>
       </div>
 
       {/* Profile Header Card */}
       <div className="card p-6 mb-4">
         <div className="flex items-start gap-4">
-          <GradientAvatar username={profile.username} size="xl" />
+          <div className="relative">
+            <GradientAvatar username={profile.username} size="xl" />
+            {profile.totalDonated > 0 && (
+              <div className="absolute -bottom-2 -right-2">
+                <ProofOrb
+                  username={profile.username}
+                  totalDonated={profile.totalDonated}
+                  socialEngagement={followerCount}
+                  size="sm"
+                />
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold">{profile.displayName}</h3>
             <p className="text-sm text-gray-400 mb-2">@{profile.username}</p>
@@ -324,10 +338,10 @@ function ShareImpactModal({ username, totalDonated, donationCount, rewardPoints,
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer')
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 modal-backdrop" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-fade-up">
@@ -376,6 +390,7 @@ function ShareImpactModal({ username, totalDonated, donationCount, rewardPoints,
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

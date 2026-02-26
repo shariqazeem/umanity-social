@@ -32,6 +32,40 @@ const config: Config = {
           900: '#064e3b',
         },
       },
+      boxShadow: {
+        'soft': '0 2px 8px rgba(0,0,0,0.04)',
+        'lifted': '0 4px 20px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02)',
+        'elevated': '0 8px 40px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)',
+        'glow': '0 0 20px rgba(16,185,129,0.15)',
+        'glow-lg': '0 0 40px rgba(16,185,129,0.2)',
+        'whale': '0 8px 60px rgba(16,185,129,0.12), 0 0 0 1px rgba(16,185,129,0.08)',
+      },
+      transitionTimingFunction: {
+        'spring': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      animation: {
+        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in': 'fadeIn 0.4s ease-out',
+        'scale-in': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'ticker': 'ticker 30s linear infinite',
+        'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+        'orb-breathe': 'orbBreathe 3s ease-in-out infinite',
+      },
+      keyframes: {
+        ticker: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        glowPulse: {
+          '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
+          '50%': { opacity: '1', transform: 'scale(1.05)' },
+        },
+        orbBreathe: {
+          '0%, 100%': { transform: 'scale(1)', filter: 'brightness(1)' },
+          '50%': { transform: 'scale(1.08)', filter: 'brightness(1.15)' },
+        },
+      },
     },
   },
   plugins: [],
