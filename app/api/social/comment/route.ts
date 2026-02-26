@@ -27,8 +27,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'contentId required' }, { status: 400 })
     }
 
-    const comments = await getComments(contentId)
-    return NextResponse.json({ success: true, comments: comments || [] })
+    const result = await getComments(contentId)
+    const comments = Array.isArray(result) ? result : (result?.comments || result?.data || [])
+    return NextResponse.json({ success: true, comments: Array.isArray(comments) ? comments : [] })
   } catch (error: any) {
     console.error('Get comments error:', error)
     return NextResponse.json({ success: true, comments: [] })

@@ -169,7 +169,10 @@ export function FeedPostCard({ post, currentUsername, guestMode = false }: FeedP
       try {
         const res = await fetch(`/api/social/comment?contentId=${post.data.id || post.id}`)
         const data = await res.json()
-        if (data.comments) setComments(data.comments)
+        const raw = data.comments
+        if (Array.isArray(raw)) {
+          setComments(raw.map((c: any) => ({ username: c.username || c.profileId || 'anon', text: c.text || c.content || '' })))
+        }
       } catch {
         // Empty
       }
