@@ -26,7 +26,7 @@ export function LiveTicker() {
       const mapped: TickerItem[] = activities.slice(0, 10).map((a: any) => {
         if (a.type === 'donation' || a.amount) {
           return {
-            text: `@${a.username || a.donor_username || 'anon'} donated ${(a.amount || 0).toFixed(2)} SOL to ${a.pool_name || a.cause || 'a cause'}`,
+            text: `@${a.username || a.donor_username || 'anon'} donated ${(Number(a.amount) || 0).toFixed(2)} SOL to ${a.pool_name || a.cause || 'a cause'}`,
             type: 'donation' as const,
           }
         }

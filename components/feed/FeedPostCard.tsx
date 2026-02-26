@@ -97,7 +97,9 @@ export function FeedPostCard({ post, currentUsername, guestMode = false }: FeedP
     || ((post.data.content as any)?.profileId)
     || 'unknown'
   const properties = extractProperties(post.data)
-  const content = extractTextContent(post.data)
+  const rawContent = extractTextContent(post.data)
+  // Normalize old "RISEN" branding to "Umanity"
+  const content = rawContent.replace(/\bRISEN\b/g, 'Umanity').replace(/\brisen\b/g, 'Umanity')
   const commentCount = (post.data.commentCount as number) || (post.data.comments as number) || 0
   const createdAt = post.timestamp || (post.data.createdAt as string) || (post.data.created_at as string)
 

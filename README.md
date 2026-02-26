@@ -5,6 +5,7 @@
 **Live Demo:** [umanity-solana.vercel.app](https://umanity-solana.vercel.app)
 **Demo Video:** [Coming soon]
 **Built for:** [Solana Graveyard Hackathon](https://www.colosseum.org/) — Resurrecting what crypto killed.
+**Built by:** Solo developer — [@umanity_xyz](https://x.com/umanity_xyz)
 
 ---
 
@@ -26,10 +27,10 @@ Umanity brings crypto charity back from the dead with three innovations:
 Your feed shows what your network is giving. Donations become stories. Follows drive accountability. Every donation auto-posts to the social feed. Built on **Tapestry Protocol** with 29 social API integrations — profiles, follows, feed, likes, comments, search, Impact Dares, referrals, leaderboards, and social graph.
 
 ### 2. DAO Governance — "Community Escrow > Trust Me Bro"
-Donations go to on-chain escrow vaults via Anchor programs. Community members earn voting power through donations. Governance proposals control when escrowed funds are released. **Votes control real money** — not just vibes. Milestone-based releases ensure accountability.
+Donations go to on-chain escrow vaults via Anchor programs. Community members earn voting power through donations (1 SOL = 1,000 points). Governance proposals signal when escrowed funds should be released — community votes are tallied off-chain, and approved milestones are executed by the on-chain authority via `release_milestone_funds`. Milestone-based releases ensure accountability: funds are locked until the community says go.
 
-### 3. Impact NFTs — "On-Chain Proof > Email Receipts"
-Soulbound, non-transferable proof of impact. Tiered certificates from Bronze to Diamond. Permanent on Solana. No speculation — pure proof of purpose.
+### 3. Impact Certificates — "Verifiable Proof > Email Receipts"
+Tiered certificates (Bronze → Silver → Gold → Diamond) tied to your wallet. Every donation is recorded on-chain via `DonationRecord` accounts — permanent, verifiable on Solscan. Certificates aggregate your giving history into a portable impact identity. Soulbound on-chain NFT minting planned as next milestone.
 
 ---
 
@@ -74,9 +75,10 @@ Donation Flow:
 Escrow + Governance Flow:
   Pool receives donations → Campaign tracks total_raised
     → Milestone threshold crossed → Auto-creates governance proposal
-    → Community votes (weighted by donation history)
+    → Community votes (weighted by donation history, tallied off-chain)
     → Proposal executed → Milestone approved/rejected
-    → Approved funds released from vault → Umanity Org wallet
+    → Authority calls release_milestone_funds on-chain
+    → Funds released from vault → Umanity Org wallet
     → Charity delivery → Proof posted on X (@umanity_xyz)
 
 Blinks Flow:
@@ -160,12 +162,13 @@ Pool IDs: `palestine-red-crescent`, `turkish-red-crescent`, `mercy-corps`, `edhi
 - **Community Tipping** — Send SOL tips to fellow community members
 - **Social Feed** — Tapestry-powered social layer for philanthropy
 - **Impact Dares** — Challenge friends to donate
-- **Impact Certificates** — Tiered (Bronze/Silver/Gold/Diamond) soulbound NFTs
+- **Impact Certificates** — Tiered (Bronze/Silver/Gold/Diamond) proof of giving
 - **Leaderboards** — Real-time rankings by contribution
 - **Reward Points** — 1 SOL = 1,000 points → voting power
 - **Share to X** — Share donations directly to X from the app
 - **4-Step Onboarding** — Username, follow suggestions, bio, profile preview
 - **Guest Mode** — Full app browsing without a wallet (for judges)
+- **AI Advisor** — Claude-powered chatbot for donor guidance and platform help
 - **Referral System** — Invite links with on-chain tracking
 - **Social Graph** — Followers, following, mutual connections
 
