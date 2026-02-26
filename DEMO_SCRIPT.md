@@ -1,116 +1,137 @@
 # Umanity — Demo Video Script (Under 3 Minutes)
 
-> Record this as a screen recording with voiceover. Use the live deployed app at https://umanity-solana.vercel.app. Have Phantom wallet ready on Devnet with some SOL.
+## Setup Before Recording
+
+- Open https://umanity-solana.vercel.app on MacBook (desktop, full screen Chrome)
+- Phantom wallet connected on **Devnet** with SOL ready
+- iPhone 16 Pro as face cam (top corner or side-by-side)
+- Screen record MacBook + face cam simultaneously
+- Have this script on your iPhone or a second screen to read from
+- Pre-load all tabs once so there are no loading delays during recording
 
 ---
 
-## [0:00 – 0:20] THE HOOK
+## STEP 1 — THE HOOK [0:00 - 0:15]
 
-**Show:** Landing page hero on desktop (the big "Crypto Charity, Resurrected" headline)
+> **SCREEN:** Landing page is visible — big "Crypto Charity, Resurrected" hero
 
-**Say:**
-> "Crypto charity is dead. GoFundMe clones had no transparency. Charity tokens were just rug pulls. Donation pages? Donate once, forgotten forever. We're resurrecting it."
+**READ:**
+"Crypto charity is dead. GoFundMe clones — no transparency. Charity tokens — rug pulls. Donation pages — donate once, forgotten forever."
 
-**Action:** Slowly scroll down the landing page past "The Graveyard" section showing the three dead trends, then into "The Resurrection" section.
+> **SCREEN:** Slowly scroll down to the 6 Resurrections cards
 
----
-
-## [0:20 – 0:40] THE SOLUTION
-
-**Show:** Scroll to the Resurrection cards + tech stats band
-
-**Say:**
-> "This is Umanity — a social impact network on Solana. It's not just a donation page. It's a full social app where giving IS the content. On-chain escrow means funds are locked until the community votes to release them. Everything is transparent, verifiable, and social."
-
-**Action:** Click "Connect Wallet" — show Phantom connecting on Devnet. You land on the full app dashboard.
+**READ:**
+"We resurrected six dead crypto trends into one working app. This is Umanity."
 
 ---
 
-## [0:40 – 1:15] LIVE DEMO — DONATE
+## STEP 2 — CONNECT & ENTER APP [0:15 - 0:30]
 
-**Show:** Click the Donate tab
+> **SCREEN:** Scroll to see the 6 resurrection cards briefly, then scroll back up
 
-**Say:**
-> "Six active charity pools — from Palestine Red Crescent to local animal rescue. Let me donate right now."
+**READ:**
+"Social-Fi, charity tokens, DAOs, NFTs, loyalty programs, and Blinks — all brought back with real utility."
 
-**Action:** Click "One-Tap Donate" (0.01 SOL) on any pool. Sign the Phantom transaction.
+> **SCREEN:** Click "Connect Wallet" — Phantom opens — approve — app dashboard loads
 
-**Say:**
-> "That just hit the Solana blockchain. Real SOL went to an on-chain escrow vault — not to anyone's personal wallet. Let me prove it."
-
-**Action:** After donation confirms, the feed auto-posts. Switch to Feed tab.
-
-**Say:**
-> "My donation automatically posted to the social feed. Everyone in my network sees it. This is social proof — the same psychology that makes you double-tap on Instagram, except here it drives real-world impact."
+**READ:**
+"Let me show you how it works. Connecting my wallet on Solana Devnet."
 
 ---
 
-## [1:15 – 1:45] SOCIAL LAYER
+## STEP 3 — DONATE LIVE [0:30 - 1:00]
 
-**Show:** Feed tab — scroll through posts, like a post, open comments
+> **SCREEN:** Click "Donate" tab. Show the 6 charity pools.
 
-**Say:**
-> "This feed is powered by Tapestry Protocol. Twenty-nine social API integrations — profiles, follows, likes, comments, search, referrals, even Impact Dares where you challenge friends to donate."
+**READ:**
+"Six active charity pools. Palestine Red Crescent, Mercy Corps, Edhi Foundation, and more. Let me donate right now."
 
-**Action:** Click Explore tab, show suggested follows and search. Follow someone.
+> **SCREEN:** Click "Donate" on any pool. Enter amount or use preset. Click confirm. Phantom popup appears — SIGN IT.
 
-**Say:**
-> "Full social graph. Follow donors you trust. See who's giving to what. Social accountability makes people give more — and keep giving."
+**READ:**
+"Real SOL. Real blockchain transaction. But here's the key — this money doesn't go to anyone's wallet. It goes to an on-chain escrow vault controlled by the community."
 
-**Action:** Show the leaderboard in the right sidebar (desktop) — Top donors, Points, Social tabs.
+> **SCREEN:** Donation confirms. Show the success message / Solscan link.
 
----
-
-## [1:45 – 2:15] GOVERNANCE
-
-**Show:** Click Govern tab
-
-**Say:**
-> "Here's where it gets interesting. Crypto governance died because votes never controlled real money. On Umanity, they do."
-
-**Action:** Show a governance proposal. Click into it, show the vote breakdown.
-
-**Say:**
-> "Every donation earns voting power. One SOL equals one thousand points. When a charity pool hits a milestone threshold, a governance proposal is auto-created. The community votes on whether to release the escrowed funds. Your vote controls real money locked in a Solana vault."
-
-**Action:** Cast a vote if possible, or show an already-voted proposal.
+**READ:**
+"Verified on Solscan. Fully transparent."
 
 ---
 
-## [2:15 – 2:40] TECH + PROFILE
+## STEP 4 — SOCIAL FEED [1:00 - 1:30]
 
-**Show:** Click Profile tab — show Impact Score, donation streak, NFT certificates, social graph
+> **SCREEN:** Click "Feed" tab. Your donation auto-posted at the top.
 
-**Say:**
-> "Every user gets an impact profile. Donation streaks, tiered certificates — Bronze through Diamond — followers, and a portable on-chain identity. All verifiable."
+**READ:**
+"My donation just auto-posted to the social feed. Everyone sees it. This is how we resurrected Social-Fi — your giving IS the content."
 
-**Action:** Briefly scroll the profile, then cut to a wide shot of the desktop 3-column layout.
+> **SCREEN:** Scroll the feed. Like a post. Open comments on a post.
 
-**Say:**
-> "Under the hood: two Anchor programs with eight hundred fifty-six lines of Rust, thirteen on-chain instructions, forty-two API routes, six Solana Blinks so you can donate from any X feed, and the entire social layer built on Tapestry."
+**READ:**
+"Likes, comments, follows, Impact Dares where you challenge friends to donate. Twenty-nine Tapestry Protocol integrations powering the entire social layer."
+
+> **SCREEN:** Click "Explore" tab briefly. Show search and suggested follows.
+
+**READ:**
+"Full social graph. Follow donors. Discover causes. Social proof drives more giving."
 
 ---
 
-## [2:40 – 3:00] THE CLOSE
+## STEP 5 — GOVERNANCE [1:30 - 2:00]
 
-**Show:** Back to the landing page or the feed with posts visible
+> **SCREEN:** Click "Govern" tab. Show the governance panel with proposals.
 
-**Say:**
-> "GoFundMe clones died because there was no transparency. Charity tokens died because there was no accountability. Donation pages died because there was no community. Umanity brings all three back — on Solana, with social proof, and with community governance over real escrowed funds."
+**READ:**
+"DAOs died because votes meant nothing. On Umanity, every vote controls real escrowed SOL."
 
-**Pause one beat.**
+> **SCREEN:** Click on a proposal. Show the vote breakdown and details.
 
-> "Umanity. Crypto charity, resurrected."
+**READ:**
+"Every donation earns voting power. One SOL equals a thousand points. When a pool hits a milestone, the community votes to release the funds. Your vote moves real money."
+
+> **SCREEN:** Cast a vote or show an existing voted proposal.
+
+**READ:**
+"This is governance with real stakes."
+
+---
+
+## STEP 6 — PROFILE & TECH [2:00 - 2:30]
+
+> **SCREEN:** Click "Profile" tab. Show impact score, stats, certificates.
+
+**READ:**
+"Every user gets an impact profile. Donation streaks, tiered impact certificates from Bronze to Diamond — soulbound NFTs with actual utility. Points, followers, a portable on-chain identity."
+
+> **SCREEN:** Scroll profile to show NFT certificates and referral section. Then zoom out to show the full 3-column desktop layout.
+
+**READ:**
+"Under the hood — two Anchor programs, eight hundred fifty-six lines of Rust, forty-two API routes, six Solana Blinks, and the entire social layer on Tapestry Protocol."
+
+---
+
+## STEP 7 — THE CLOSE [2:30 - 2:50]
+
+> **SCREEN:** Show the landing page OR the feed with the full 3-column layout
+
+**READ:**
+"Six dead crypto trends. All resurrected. One app. Real donations. Real governance. Real social proof. All on Solana."
+
+> **SCREEN:** Landing page hero visible. Look at camera.
+
+*Pause one beat. Then:*
+
+"Umanity. Crypto charity, resurrected."
 
 ---
 
 ## Recording Tips
 
-- **Desktop first** — the 3-column layout looks most impressive
-- **Use the seeded demo data** so the feed has posts, leaderboard has entries
-- **Don't rush** — let each screen breathe for 1-2 seconds before talking
-- **Edit out loading spinners** — cut to the loaded state
-- **Show the Phantom transaction popup** — it proves this is real on-chain
-- **Keep energy calm but confident** — Apple keynote vibe, not hype
-- **Use screen recording at 1080p or higher**
-- **If recording voiceover separately**: record screen first, then voiceover on top
+1. **Pre-load everything** — visit each tab once before recording so data is cached
+2. **Keep Phantom ready** — have it unlocked with devnet SOL so the donation is instant
+3. **Face cam energy** — calm, confident, natural. Not hype. Talk like you're showing a friend
+4. **Don't rush** — let each screen breathe 1-2 seconds before speaking
+5. **If you mess up a line** — just pause, restart that section, edit later
+6. **Screen resolution** — record at 1080p minimum, full screen browser
+7. **Face cam position** — bottom-right corner or picture-in-picture works great
+8. **Total target: 2:45 - 2:55** — leave a few seconds of breathing room under 3:00
