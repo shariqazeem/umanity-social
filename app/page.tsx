@@ -510,70 +510,110 @@ function LandingPage({ onGuestMode }: { onGuestMode: () => void }) {
           <StatsBar />
         </div>
 
-        {/* ===== THE GRAVEYARD ===== */}
+        {/* ===== 6 RESURRECTIONS ===== */}
         <section className="py-20 md:py-28 bg-[#fafafa]">
-          <div className="max-w-5xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <p className="text-[10px] font-bold text-[#aeaeb2] uppercase tracking-[0.2em] mb-3">The Graveyard</p>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-[-0.03em] text-[#1d1d1f] mb-3">Three trends died.</h2>
-              <p className="text-[#86868b] text-base max-w-md mx-auto">Crypto charity failed because it prioritized tech over trust.</p>
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-14">
+              <p className="text-[10px] font-bold text-[#aeaeb2] uppercase tracking-[0.2em] mb-3">The Graveyard &rarr; The Resurrection</p>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-[-0.03em] text-[#1d1d1f] mb-3">6 dead trends. All resurrected.</h2>
+              <p className="text-[#86868b] text-base max-w-lg mx-auto">Every &ldquo;dead&rdquo; crypto category — rebuilt with real utility inside one app.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-stagger">
-              {[
-                { dead: 'GoFundMe Clones', why: 'No transparency. Off-chain. No community. Donate and hope for the best.', emoji: '🪦' },
-                { dead: 'Charity Tokens', why: 'Rug pulls everywhere. No accountability. Pure speculation disguised as giving.', emoji: '🪦' },
-                { dead: 'Donation Pages', why: 'Zero follow-up. No social proof. Donate once, forgotten forever.', emoji: '🪦' },
-              ].map((item) => (
-                <div key={item.dead} className="bg-white rounded-2xl p-6 border border-black/[0.05]">
-                  <span className="text-2xl mb-3 block">{item.emoji}</span>
-                  <h3 className="text-[15px] font-bold text-[#aeaeb2] line-through mb-2">{item.dead}</h3>
-                  <p className="text-[13px] text-[#86868b] leading-relaxed">{item.why}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ===== THE RESURRECTION ===== */}
-        <section className="py-20 md:py-28 bg-white">
-          <div className="max-w-5xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-3">The Resurrection</p>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-[-0.03em] text-[#1d1d1f] mb-3">We brought it back.</h2>
-              <p className="text-[#86868b] text-base max-w-md mx-auto">Three innovations that fix what killed crypto charity.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-stagger">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 {
-                  num: '01', title: 'Social-First Feed', subtitle: 'Social Proof > Donation Pages',
-                  desc: 'Your feed shows what your network is giving. Donations become stories. 29 Tapestry Protocol integrations.',
-                  icon: '◎', tag: 'Tapestry Protocol',
+                  dead: 'Social-Fi',
+                  why: 'Just farming & airdrops. No real social value. Users left when rewards dried up.',
+                  alive: 'Social Impact Feed',
+                  how: 'Your feed shows what your network is giving. Donations auto-post as stories. Likes, comments, follows — social proof drives real charity.',
+                  tag: 'Tapestry Protocol',
+                  stat: '29 social integrations',
+                  color: 'emerald',
                 },
                 {
-                  num: '02', title: 'DAO Governance', subtitle: 'Community Escrow > Trust Me Bro',
-                  desc: 'On-chain escrow vaults via Anchor. Community votes control fund releases. Real stakes.',
-                  icon: '⬡', tag: 'Anchor Escrow',
+                  dead: 'Charity Tokens',
+                  why: 'Rug pulls everywhere. No accountability. Speculation disguised as giving.',
+                  alive: 'On-Chain Escrow',
+                  how: 'Donations go to Anchor vault PDAs — not wallets. Funds are locked until the community votes to release them. Fully verifiable on Solscan.',
+                  tag: 'Anchor Programs',
+                  stat: '856 lines of Rust',
+                  color: 'blue',
                 },
                 {
-                  num: '03', title: 'Impact Certificates', subtitle: 'On-Chain Proof > Email Receipts',
-                  desc: 'Tiered certificates — Bronze to Diamond. Every donation recorded on-chain, verifiable on Solscan.',
-                  icon: '◆', tag: 'On-Chain Proof',
+                  dead: 'DAOs',
+                  why: 'Votes meant nothing. No real stakes. Governance theater with zero accountability.',
+                  alive: 'Fund Release Governance',
+                  how: 'Every vote controls real escrowed SOL. Milestone-based releases — community decides when charity funds move. Your vote = real money.',
+                  tag: 'Real Stakes',
+                  stat: '13 on-chain instructions',
+                  color: 'purple',
                 },
-              ].map((f) => (
-                <div key={f.num} className="group bg-white rounded-2xl p-6 border border-black/[0.05] hover:border-emerald-200/60 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-lg text-emerald-600">
-                      {f.icon}
+                {
+                  dead: 'NFTs',
+                  why: 'Just JPEGs. No utility. Speculative hype with zero real-world value.',
+                  alive: 'Impact Certificates',
+                  how: 'Tiered proof of giving — Bronze to Diamond. Every certificate tied to a real on-chain donation. Portable impact identity, not a monkey pic.',
+                  tag: 'On-Chain Proof',
+                  stat: '4 tiers · soulbound',
+                  color: 'amber',
+                },
+                {
+                  dead: 'Loyalty Programs',
+                  why: 'Pointless points. No real utility. Expired, devalued, or abandoned.',
+                  alive: 'Reward Points = Voting Power',
+                  how: '1 SOL = 1,000 points. Points unlock governance voting, council membership, tier upgrades. Your generosity literally gives you a voice.',
+                  tag: 'Points → Power',
+                  stat: 'Donation-weighted votes',
+                  color: 'rose',
+                },
+                {
+                  dead: 'Blinks / Actions',
+                  why: 'Cool tech, nobody used it. No compelling use case beyond DeFi swaps.',
+                  alive: 'Donate-from-Anywhere Blinks',
+                  how: '6 charity Blinks — donate from any X feed, any website. See a cause, tap, sign, done. Solana Actions for real-world impact.',
+                  tag: 'Solana Actions v2',
+                  stat: '6 live Blinks',
+                  color: 'orange',
+                },
+              ].map((r) => {
+                const colors: Record<string, { bg: string; text: string; border: string; tagBg: string }> = {
+                  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'hover:border-emerald-200/60', tagBg: 'bg-emerald-50' },
+                  blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'hover:border-blue-200/60', tagBg: 'bg-blue-50' },
+                  purple: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'hover:border-purple-200/60', tagBg: 'bg-purple-50' },
+                  amber: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'hover:border-amber-200/60', tagBg: 'bg-amber-50' },
+                  rose: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'hover:border-rose-200/60', tagBg: 'bg-rose-50' },
+                  orange: { bg: 'bg-orange-50', text: 'text-orange-600', border: 'hover:border-orange-200/60', tagBg: 'bg-orange-50' },
+                }
+                const c = colors[r.color] || colors.emerald
+                return (
+                  <div key={r.dead} className={`group bg-white rounded-2xl p-6 border border-black/[0.05] ${c.border} hover:shadow-lg transition-all duration-300`}>
+                    {/* Dead */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm">🪦</span>
+                      <span className="text-[13px] font-bold text-[#aeaeb2] line-through">{r.dead}</span>
                     </div>
-                    <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">{f.tag}</span>
+                    <p className="text-[11px] text-[#aeaeb2] leading-relaxed mb-4">{r.why}</p>
+
+                    {/* Divider arrow */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex-1 h-px bg-black/[0.06]" />
+                      <span className={`text-[10px] font-bold ${c.text}`}>RESURRECTED</span>
+                      <div className="flex-1 h-px bg-black/[0.06]" />
+                    </div>
+
+                    {/* Alive */}
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-[15px] font-bold text-[#1d1d1f]">{r.alive}</h3>
+                      <span className={`text-[8px] font-bold ${c.text} ${c.tagBg} px-2 py-0.5 rounded-full`}>{r.tag}</span>
+                    </div>
+                    <p className="text-[12px] text-[#86868b] leading-relaxed mb-3">{r.how}</p>
+                    <div className={`inline-flex items-center gap-1.5 ${c.tagBg} px-2.5 py-1 rounded-full`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${c.bg.replace('50', '500').replace('bg-', 'bg-')}`} style={{ backgroundColor: r.color === 'emerald' ? '#10b981' : r.color === 'blue' ? '#3b82f6' : r.color === 'purple' ? '#8b5cf6' : r.color === 'amber' ? '#f59e0b' : r.color === 'rose' ? '#f43f5e' : '#f97316' }} />
+                      <span className={`text-[10px] font-semibold ${c.text}`}>{r.stat}</span>
+                    </div>
                   </div>
-                  <h3 className="text-[17px] font-bold mb-1 text-[#1d1d1f]">{f.title}</h3>
-                  <p className="text-[12px] font-semibold text-emerald-600 mb-2.5">{f.subtitle}</p>
-                  <p className="text-[13px] text-[#86868b] leading-relaxed">{f.desc}</p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>

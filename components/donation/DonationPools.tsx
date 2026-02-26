@@ -213,13 +213,16 @@ export function DonationPools() {
             {'🤝'}
           </div>
           <div>
-            <p className="text-xs font-semibold text-emerald-800 mb-1">How Umanity delivers impact</p>
+            <p className="text-xs font-semibold text-emerald-800 mb-1">Transparent on-chain escrow</p>
             <p className="text-[11px] text-emerald-700 leading-relaxed">
-              All donated funds are held on-chain and released via community governance votes.
-              Umanity Org receives approved funds and physically delivers to verified charities.
-              Every delivery is documented with proof posted on{' '}
+              Donations go to Anchor vault PDAs — not personal wallets. Funds are released only when the community votes to approve milestones.
+              Every delivery is documented with proof on{' '}
               <a href="https://x.com/umanity_xyz" target="_blank" rel="noopener noreferrer" className="font-semibold underline">@umanity_xyz</a>.
             </p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+              <a href="https://solscan.io/account/9JBsHFy9rQhjcPiKkFzqxpUV9HZyZ1ZmE4AWXc1Kiys1?cluster=devnet" target="_blank" rel="noopener noreferrer" className="text-[9px] font-mono text-emerald-600 hover:underline">Donations Program &rarr;</a>
+              <a href="https://solscan.io/account/DBzVAJHgiyVWZMdj1Q2vHUfL1wW4nVag3AqJ5FKmxtau?cluster=devnet" target="_blank" rel="noopener noreferrer" className="text-[9px] font-mono text-emerald-600 hover:underline">Tips Program &rarr;</a>
+            </div>
           </div>
         </div>
       </div>
@@ -265,13 +268,27 @@ export function DonationPools() {
                   <span className="text-xs text-gray-300 mx-1.5">{'\u00B7'}</span>
                   <span className="text-xs text-gray-400">{pool.donorCount} donors</span>
                 </div>
-                <button
-                  onClick={() => setSelectedPool(pool)}
-                  disabled={!publicKey}
-                  className="btn-primary py-2 px-5 text-xs"
-                >
-                  Donate
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/api/actions/donate/${pool.id}`
+                      navigator.clipboard.writeText(url)
+                      const el = document.getElementById(`blink-${pool.id}`)
+                      if (el) { el.textContent = 'Copied!'; setTimeout(() => { el.textContent = 'Blink' }, 1500) }
+                    }}
+                    className="py-2 px-3 text-[10px] font-medium rounded-lg border border-black/[0.06] text-[#86868b] hover:text-[#1d1d1f] hover:border-black/[0.12] transition-all"
+                    title="Copy Solana Blink URL"
+                  >
+                    <span id={`blink-${pool.id}`}>Blink</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedPool(pool)}
+                    disabled={!publicKey}
+                    className="btn-primary py-2 px-5 text-xs"
+                  >
+                    Donate
+                  </button>
+                </div>
               </div>
               {campaigns[pool.id] && (
                 <MilestoneProgress

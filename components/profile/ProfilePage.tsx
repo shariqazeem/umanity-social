@@ -301,14 +301,45 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* NFT Gallery */}
+      {/* Impact Certificates — Resurrected NFTs */}
       <div className="card p-6 mb-4">
-        <h3 className="font-semibold mb-4">Impact NFTs</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold">Impact Certificates</h3>
+            <p className="text-[10px] text-[#aeaeb2] mt-0.5">Soulbound on-chain proof of giving — NFTs with real utility</p>
+          </div>
+          <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{nfts.length} earned</span>
+        </div>
+
+        {/* Tier Progress */}
+        <div className="flex items-center gap-1.5 mb-4 px-1">
+          {[
+            { label: 'Bronze', threshold: 0.01, emoji: '🥉', color: 'bg-orange-400' },
+            { label: 'Silver', threshold: 0.1, emoji: '🥈', color: 'bg-gray-400' },
+            { label: 'Gold', threshold: 0.5, emoji: '🥇', color: 'bg-yellow-400' },
+            { label: 'Diamond', threshold: 1.0, emoji: '💎', color: 'bg-blue-400' },
+          ].map((t, i) => {
+            const earned = nfts.some((n: any) => {
+              const amount = parseFloat(n.amount || '0')
+              if (t.label === 'Diamond') return amount >= 1.0
+              if (t.label === 'Gold') return amount >= 0.5
+              if (t.label === 'Silver') return amount >= 0.1
+              return amount >= 0.01
+            })
+            return (
+              <div key={t.label} className="flex-1 flex flex-col items-center gap-1">
+                <span className={`text-sm ${earned ? '' : 'grayscale opacity-30'}`}>{t.emoji}</span>
+                <div className={`w-full h-1 rounded-full ${earned ? t.color : 'bg-gray-100'}`} />
+                <span className="text-[8px] text-gray-400">{t.label}</span>
+              </div>
+            )
+          })}
+        </div>
+
         {nfts.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-2xl mb-2">🏅</p>
-            <p className="text-sm text-gray-400">No impact NFTs yet</p>
-            <p className="text-xs text-gray-300">Donate to earn soulbound impact certificates</p>
+          <div className="text-center py-6 bg-gray-50 rounded-xl">
+            <p className="text-sm text-gray-400">No certificates yet</p>
+            <p className="text-[11px] text-gray-300 mt-1">Donate to earn your first impact certificate</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-stagger">

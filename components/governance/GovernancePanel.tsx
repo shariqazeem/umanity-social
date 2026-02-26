@@ -69,14 +69,18 @@ export function GovernancePanel() {
     <div className="max-w-2xl mx-auto">
       {/* Council Header */}
       <div className="mb-6 pt-2">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center">
             <span className="text-white text-sm">⬡</span>
           </div>
           <div>
             <h2 className="text-2xl font-bold tracking-[-0.02em]">Governance</h2>
-            <p className="text-[#86868b] text-[12px]">Community votes control real escrowed funds.</p>
+            <p className="text-[#86868b] text-[12px]">DAOs died because votes meant nothing. Here, votes control real money.</p>
           </div>
+        </div>
+        <div className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse flex-shrink-0" />
+          <p className="text-[11px] text-purple-700">Proposals release SOL from on-chain escrow vaults. 1 SOL donated = 1,000 voting power.</p>
         </div>
       </div>
 
